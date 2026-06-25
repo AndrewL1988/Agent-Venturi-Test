@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install --prefix server"
+
+[deploy]
+startCommand = "NODE_ENV=production node server/index.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[deploy.healthcheck]
+path = "/api/health"
+intervalSeconds = 30
+timeoutSeconds = 10
