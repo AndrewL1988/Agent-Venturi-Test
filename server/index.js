@@ -32,7 +32,7 @@ const CFG = {
   COOLDOWN_SECONDS         : parseInt(process.env.COOLDOWN_SECONDS          || "3",    10),
   SAFE_MODE                : (process.env.SAFE_MODE  ?? "false") === "true",
   RAG_ENABLED              : (process.env.RAG_ENABLED ?? "false") === "true",
-  RAG_CHUNKS               : parseInt(process.env.RAG_CHUNKS || "8", 10),
+  RAG_CHUNKS               : parseInt(process.env.RAG_CHUNKS || "10", 10),
   OPENAI_API_KEY           : process.env.OPENAI_API_KEY || null,
   AGENT_ENABLED            : (process.env.AGENT_ENABLED ?? "true") === "true",
   SAFE_MODE_MAX            : 20,   // SAFE_MODE hard cap (not configurable by design)
@@ -284,7 +284,7 @@ async function retrieveChunks(question) {
     const { data, error } = await supabase.rpc("match_knowledge_chunks", {
       query_embedding: embedding,
       match_count: CFG.RAG_CHUNKS,
-      match_threshold: 0.30,
+      match_threshold: 0.25,
     });
     if (error || !data || data.length === 0) return null;
 
