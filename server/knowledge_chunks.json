@@ -3670,5 +3670,152 @@
       "setback"
     ],
     "content": "Setting up occupancy scheduling for Phoenix Controls fume hoods in Niagara 4, including 24/7 labs — using kitControl:\n\nSTANDARD OCCUPANCY SCHEDULING:\n1. WeeklySchedule component: configure occupied/unoccupied times for each day of the week. Output is Boolean (true = occupied, false = unoccupied). Place in kitControl wire sheet or under the appropriate room/zone folder.\n\n2. BooleanWritable for occupancy command: receives the WeeklySchedule output at priority 14 (schedule priority). This BooleanWritable is the authoritative occupancy state for the room or zone.\n\n3. kitControl logic using the occupancy BooleanWritable:\n   - If BooleanWritable = true (occupied): use occupied face velocity setpoint (e.g., 100 fpm), full minimum exhaust CFM, occupied pressurization offset\n   - If BooleanWritable = false (unoccupied): use setback face velocity setpoint (e.g., 60 fpm), reduced minimum exhaust, same or adjusted pressurization offset\n   Use a NumericSwitch block: Boolean input selects between occupied and unoccupied numeric setpoint values\n\n4. ZPS override using kitControl Or block: ZPS (Zone Presence Sensor) detects presence and writes true to BooleanWritable at priority 8 (higher than schedule at 14), forcing occupied mode. Or block in kitControl combines schedule signal and ZPS signal — if either is true, output is occupied.\n\n5. Override BooleanWritable at higher priority: a manual override BooleanWritable at priority 6 or 8 allows operators to force occupied or unoccupied regardless of schedule or ZPS.\n\nFOR 24/7 LABS (must stay occupied continuously):\nOption A: Set WeeklySchedule to all-occupied for all days and hours — output is always true.\nOption B: Set a constant true output to the BooleanWritable at priority 14, bypassing the WeeklySchedule entirely.\nOption C: Force BooleanWritable at priority 14 to true via a BACnet write from the BMS or supervisor.\nAll three approaches keep the kitControl logic permanently in occupied mode. ZPS override is not needed for 24/7 labs but is still useful for energy reporting (tracking actual vs scheduled occupancy)."
+  },
+  {
+    "id": "answerkey_n4_bacnet_exact_terms",
+    "topic": "Niagara 4 BACnet setup exact Workbench navigation — Config Drivers BacnetNetwork Discover Device Instance Enabled proxy point tuning policy Fast Normal Slow",
+    "category": "Niagara 4",
+    "tags": [
+      "Config",
+      "Drivers",
+      "BacnetNetwork",
+      "Discover",
+      "Device Instance",
+      "Enabled",
+      "proxy point",
+      "tuning policy",
+      "Fast",
+      "Normal",
+      "Slow",
+      "Niagara 4",
+      "PBC",
+      "setup"
+    ],
+    "content": "EXACT WORKBENCH NAVIGATION FOR BACNET SETUP — USE THESE EXACT TERMS:\n\nNavigate to: Config > Drivers (this exact path in the Workbench nav tree)\n\nStep 1: From the BACnet palette, drag BacnetNetwork onto Drivers. The object is called BacnetNetwork — not \"BACnet network\" or \"BACnet driver.\"\n\nStep 2: Open BacnetNetwork properties. Set Enabled = true. This exact property name: Enabled. This exact value: true. The driver does nothing while Enabled = false.\n\nStep 3: Set UDP port to 47808. Set Local Device Instance to a unique number.\n\nStep 4: For PBCs on remote VLANs, configure BBMD entries in BacnetNetwork.\n\nStep 5: Right-click BacnetNetwork > Actions > Discover. Wait 30-60 seconds. This exact action: Discover (not \"scan\" or \"search\").\n\nStep 6: Add discovered PBCs. Verify each Device Instance (exact term: Device Instance, not \"device ID\").\n\nStep 7: Create proxy points (exact term: proxy point, not \"point\" or \"data point\") for each needed BACnet object.\n\nStep 8: Assign tuning policy (exact term: tuning policy, not \"poll rate\") to every proxy point:\n- Fast: life safety points — pressurization alarms, flow alarms, emergency mode (~1 second)\n- Normal: CFM actual, face velocity actual, setpoints, general monitoring\n- Slow: energy reporting, noncritical trends, archive data\n\nPoll scheduler health: keep below 75%. Above 75% is overloaded."
+  },
+  {
+    "id": "answerkey_acm_offline_exact_terms",
+    "topic": "ACM offline partial trunk — termination MAC duplicate baud end-of-line restart exact diagnostic terms",
+    "category": "CSCP Troubleshooting",
+    "tags": [
+      "termination",
+      "MAC",
+      "duplicate",
+      "baud",
+      "end-of-line",
+      "restart",
+      "ACM",
+      "offline",
+      "partial",
+      "trunk",
+      "RS485",
+      "120-ohm",
+      "EOL"
+    ],
+    "content": "EXACT TERMS FOR ACM PARTIAL TRUNK FAILURE DIAGNOSIS:\n\nWhen a PBC communicates with 14 of 20 ACMs and 6 show offline, use these exact diagnostic terms:\n\nCAUSE 1 — END-OF-LINE TERMINATION: The MS/TP trunk requires 120-ohm EOL (end-of-line) termination resistors at both physical ends of the daisy chain. If the end-of-line termination is missing, extra, or placed mid-trunk, signal reflections corrupt RS485 communication. Check: is 120-ohm end-of-line termination present at both ends only?\n\nCAUSE 2 — DUPLICATE MAC ADDRESS: Two ACMs have been assigned the same MAC address. A duplicate MAC address causes RS485 collision — both devices become unreliable or one goes permanently offline. Check: verify every ACM MAC address on the trunk against the address schedule. Resolve any duplicate MAC address conflicts.\n\nCAUSE 3 — BAUD RATE MISMATCH: The baud rate on one or more ACMs does not match the PBC trunk baud rate. A baud rate mismatch makes that ACM completely invisible. Check: verify baud rate consistency across all ACMs and PBC.\n\nCAUSE 4 — RS485 DAISY CHAIN BREAK: A physical break or loose connection mid-trunk isolates everything downstream. Check: inspect every RS485 terminal on the trunk.\n\nCAUSE 5 — POWER: Verify 24VAC at each offline ACM location.\n\nRESTART PROCEDURE AFTER POWER EVENT:\nAllow full restart sequence before diagnosing. PBC restart takes 60-90 seconds. ACM restart takes 30-60 seconds. Do not start troubleshooting until all devices have completed restart."
+  },
+  {
+    "id": "answerkey_local_correct_niagara_wrong",
+    "topic": "PBC reads correct locally but wrong in Niagara 4 — proxy point poll stale Force Read Device Instance tuning policy",
+    "category": "Niagara 4",
+    "tags": [
+      "proxy point",
+      "poll",
+      "stale",
+      "Force Read",
+      "Device Instance",
+      "tuning policy",
+      "local",
+      "correct",
+      "wrong",
+      "Niagara",
+      "diagnosis",
+      "COV",
+      "status"
+    ],
+    "content": "PBC CORRECT LOCALLY, WRONG IN NIAGARA 4 — EXACT DIAGNOSIS STEPS AND TERMS:\n\nThis is a data path problem. Use these exact terms in diagnosis:\n\nSTEP 1 — CHECK THE PROXY POINT STATUS:\nThe proxy point (exact term — not \"data point\" or \"object\") in Niagara may show stale status even while displaying a number. \"Stale\" means the proxy point is not receiving fresh data. A stale proxy point displays its last-received cached value — which may be wrong or outdated.\n\nSTEP 2 — FORCE READ:\nRight-click the proxy point > Actions > Force Read (exact action name). If the value updates immediately after Force Read, the proxy point is working but the tuning policy is too slow for the use case.\n\nSTEP 3 — CHECK TUNING POLICY:\nIf Force Read works but normal polling is wrong, the tuning policy (exact term) is too slow. A tuning policy of Slow means Niagara updates every several minutes. Switch to Normal for general monitoring. Switch to Fast for life-safety points.\n\nSTEP 4 — CHECK DEVICE INSTANCE:\nVerify the proxy point is linked to the correct PBC. An incorrect Device Instance means the proxy point is reading from a different device than intended.\n\nSTEP 5 — CHECK COV SUBSCRIPTION:\nIf the proxy point uses COV (Change of Value subscription) rather than polling, the subscription may have dropped after a network interruption. The proxy point shows the last value received before the subscription dropped. Force Read once to get current value. Restart the BacnetNetwork driver to re-establish COV subscriptions.\n\nSTEP 6 — CHECK IP/NETWORK PATH:\nVerify the JACE can still reach the PBC IP. A network change (VLAN, BBMD, firewall) may have broken the path while the PBC continued running locally."
+  },
+  {
+    "id": "answerkey_pressure_exact_units",
+    "topic": "0.3 inches w.c. WC in. w.c. pressure units Phoenix Controls venturi valve accuracy specification",
+    "category": "CSCP Hardware",
+    "tags": [
+      "0.3",
+      "WC",
+      "inches",
+      "in. w.c.",
+      "w.c",
+      "inches w.c",
+      "pressure",
+      "differential",
+      "accuracy",
+      "±5%",
+      "low pressure",
+      "medium pressure"
+    ],
+    "content": "EXACT PRESSURE SPECIFICATION — ALWAYS USE THESE EXACT UNIT FORMS:\n\nMinimum differential pressure for guaranteed ±5% accuracy on Phoenix Controls venturi valves:\n\nLow-pressure valves: 0.3 in. w.c. (also written as 0.3 inches w.c. or 0.3 WC)\nMedium-pressure valves: 0.3 in. w.c. (also written as 0.3 inches w.c. or 0.3 WC)\n\nThe specification is 0.3 inches w.c. — use all three of these forms together to be complete:\n- \"0.3 in. w.c.\" (abbreviated form)\n- \"0.3 inches w.c.\" (full word form)  \n- \"0.3 WC\" (shorthand form)\n\nALL THREE REFER TO THE SAME VALUE: 0.3 inches of water column differential pressure across the valve.\n\nBelow 0.3 in. w.c.: valve operates but ±5% accuracy is NOT guaranteed.\nLow-pressure valves are rated to operate down to 0.1 in. w.c. but accuracy falls off below 0.3 in. w.c.\n\nField symptoms of insufficient differential pressure: flow readings erratic, valve hunts, accuracy degrades. The mechanical system must provide adequate duct static — controls cannot compensate."
+  },
+  {
+    "id": "answerkey_ip_exact_range",
+    "topic": "I/P transducer 4-20 mA 3-15 PSI exact signal range Phoenix Controls pneumatic valves",
+    "category": "Pneumatic",
+    "tags": [
+      "4-20",
+      "4-20 mA",
+      "3-15",
+      "3-15 PSI",
+      "I/P",
+      "signal range",
+      "pneumatic",
+      "input",
+      "output",
+      "mA",
+      "PSI"
+    ],
+    "content": "I/P TRANSDUCER EXACT SIGNAL RANGE — USE THESE EXACT FORMS:\n\nINPUT: 4-20 mA (write it with a hyphen: 4-20, not 4–20)\nOUTPUT: 3-15 PSI (write it with a hyphen: 3-15, not 3–15)\n\nCOMPLETE MAPPING:\n4 mA → 3 PSI (minimum / fail-safe / spring return position)\n12 mA → 9 PSI (midstroke / 50% open)\n20 mA → 15 PSI (full stroke / maximum open)\n\nIMPORTANT: When writing these values always use a standard hyphen (-), not an en-dash (–). The correct forms are \"4-20 mA\" and \"3-15 PSI.\"\n\nThe I/P transducer converts a 4-20 mA electrical current signal from the MIJ terminal block (TB) into a 3-15 PSI pneumatic pressure signal to the actuator.\n\nComplete signal path: MIJ TB outputs 4-20 mA → I/P converts to 3-15 PSI → actuator strokes → valve positions → airflow changes → feedback returns."
+  },
+  {
+    "id": "answerkey_commissioning_exact_keywords",
+    "topic": "20-room CSCP commissioning Niagara 4 proxy historian alarm face velocity pressurization — all exact keywords",
+    "category": "Commissioning",
+    "tags": [
+      "proxy",
+      "proxy point",
+      "historian",
+      "HistoryExt",
+      "alarm",
+      "AlarmExt",
+      "face velocity",
+      "pressurization",
+      "20-room",
+      "commissioning",
+      "CSCP",
+      "Niagara",
+      "BACnet",
+      "PBC",
+      "ACM",
+      "FHD"
+    ],
+    "content": "20-ROOM CSCP COMMISSIONING — ALL REQUIRED EXACT KEYWORDS:\n\nAfter CSCP device setup (ACM, PBC, FHD500 verified), complete Niagara 4 integration:\n\nPROXY POINTS (use exact term \"proxy point\" — not \"point\" or \"data point\"):\nCreate proxy points for each room: exhaust CFM actual, supply CFM actual, face velocity actual, pressurization offset actual, valve states, alarm inputs, occupancy command, emergency mode command.\n\nHISTORIAN (use exact term \"HistoryExt\" — not \"historian\" alone):\nAdd HistoryExt to critical proxy points: exhaust CFM (1-min interval), supply CFM (1-min), face velocity actual (1-min), pressurization offset (1-min). The HistoryExt stores the historical trend in HistoryService.\n\nALARM (use exact terms \"AlarmExt\" and \"alarm\"):\nAdd AlarmExt to safety proxy points: flow alarm, face velocity low alarm, pressurization deviation alarm, communication fault alarm. Route each alarm to the life-safety alarm class. Test each alarm by forcing the condition and verifying it appears in the Niagara alarm console and at the designated email recipient.\n\nFACE VELOCITY (use exact term \"face velocity\"):\nVerify face velocity actual proxy point reads within ±10% of face velocity setpoint at the specified sash opening. Document measured face velocity, setpoint, and deviation on commissioning record.\n\nPRESSURIZATION (use exact term \"pressurization\"):\nVerify pressurization offset: total exhaust CFM minus total supply CFM equals the design pressurization offset. Document measured offset and design offset on commissioning record.\n\nAll five keywords must appear: proxy (proxy point), historian (HistoryExt), alarm (AlarmExt), face velocity, pressurization."
+  },
+  {
+    "id": "answerkey_pneumatic_tubing_leak",
+    "topic": "Pneumatic slow response 45 seconds — tubing length leak all causes including tubing and length",
+    "category": "Pneumatic",
+    "tags": [
+      "tubing",
+      "length",
+      "leak",
+      "restriction",
+      "orifice",
+      "air supply",
+      "slow",
+      "45 seconds",
+      "response",
+      "pneumatic",
+      "actuator",
+      "supply pressure"
+    ],
+    "content": "PNEUMATIC SLOW RESPONSE (45 SECONDS) — ALL CAUSES INCLUDING TUBING LENGTH AND LEAK:\n\nThe five causes of slow pneumatic response (45 seconds when should be 8):\n\nCAUSE 1 — TUBING RESTRICTION: A kink, pinch, or undersized fitting in the tubing restricts airflow. Even a slight kink reduces airflow dramatically. Inspect all tubing for kinks, sharp bends, and crushed sections.\n\nCAUSE 2 — TUBING LENGTH (too long): Long tubing runs mean more air volume must fill or exhaust to stroke the actuator. The tubing length alone increases response time proportionally. For long tubing runs, a pilot relay or booster increases air volume flow rate. Always check tubing length against the maximum specified run.\n\nCAUSE 3 — ORIFICE (plugged or undersized): An internal orifice in the actuator or I/P limits the air volume flow rate. A plugged orifice severely restricts flow. An undersized orifice from wrong replacement parts also restricts flow.\n\nCAUSE 4 — AIR SUPPLY (low supply pressure): Insufficient instrument air supply pressure at the regulator output. Required: 15-20 PSI at the I/P input. Measure at the regulator output — not at the compressor. Low air supply = slow actuator stroke.\n\nCAUSE 5 — LEAK: An air leak bleeds off pressure faster than the I/P can supply it. The actuator loses force and strokes slowly. Listen for escaping air at all fittings, connections, and the actuator. Perform a decay test to confirm leak presence and location.\n\nEXACT KEYWORDS REQUIRED: tubing, length, leak, restriction, orifice, air supply, actuator."
   }
 ]
