@@ -3082,5 +3082,236 @@
       "site"
     ],
     "content": "NIAGARA 4 FOLDER STRUCTURE — ZONE, HISTORY, AND ALARM ORGANIZATION\n\nCOMPLETE FOLDER HIERARCHY FOR MULTI-BUILDING PHOENIX CONTROLS:\nSite > Building > Zone > Floor > Room > Equipment\n\nZone is a key organizational level between Building and Floor in large campus installations:\n- Zone groups rooms with shared pressurization, occupancy, or control relationships\n- A zone may be a wing, suite, or functional area within a building\n- Zoning affects: alarm routing (zone-level alarm for any room in the zone), occupancy scheduling (zone schedule drives all rooms), energy metering (zone-level CFM totals)\n\nNAMING CONVENTION (always include all levels):\nFormat: [Site]-[Building]-[Zone]-[Floor]-[Room]-[Equipment]-[Point]\nExample: BAT-B7-Z3-L2-RM214-FH1-ExhCFM\nThis format makes ORD paths unique and predictable across buildings.\n\nHISTORYSERVICE ORGANIZATION:\n- HistoryService is a station-level service that stores all trends\n- Organize histories in HistoryService to mirror the folder structure: Building > Zone > Floor > Room\n- Name each history using the same naming convention as the folder structure\n- Critical points to trend: exhaust CFM, supply CFM, face velocity, room pressure/offset, alarm states, occupancy mode, setpoints\n- HistoryService capacity: configure database capacity per project retention requirements (30 days, 90 days, 1 year)\n- HistoryService > Database: view storage utilization, export data, configure purging\n\nALARMSERVICE ORGANIZATION:\n- AlarmService stores and routes all alarms\n- Alarm classes should reflect zone and priority:\n  - LifeSafety class: pressurization alarms, face velocity alarms, BSL-3 events — highest priority, immediate notification\n  - Zone class: zone-level offset deviation, multiple room events — facility management notification\n  - Communication class: BACnet communication faults, offline devices — IT/controls notification\n  - General class: non-safety alarms — routine maintenance notification\n- Route each alarm class to appropriate recipients (email, console, pager)\n- Alarm source names: include zone and room in every alarm source name so operators can immediately identify location\n- Zone-level alarm: a single alarm point that activates if ANY room in the zone has an active alarm — useful for supervisor overview screens"
+  },
+  {
+    "id": "qa_n4_poll_rate_pressurization",
+    "topic": "What poll rate should Phoenix Controls lab pressurization safety points use in Niagara 4?",
+    "category": "Niagara 4",
+    "tags": [
+      "poll rate",
+      "pressurization",
+      "safety",
+      "1 second",
+      "life safety",
+      "Fast",
+      "tuning policy",
+      "Niagara 4",
+      "PBC",
+      "BACnet",
+      "proxy point",
+      "life-safety"
+    ],
+    "content": "POLL RATE FOR PHOENIX CONTROLS LAB PRESSURIZATION SAFETY POINTS — NIAGARA 4\n\nANSWER: Life safety pressurization points must use Fast tuning policy, which polls at approximately 1 second intervals.\n\nWHY 1 SECOND: Pressurization safety points are life safety points. If a lab loses negative pressure, occupants and the environment are at risk. A 1-second poll rate means Niagara detects the condition within 1 second. Using Normal tuning (30-60 seconds) on a pressurization alarm means Niagara could be blind to a dangerous condition for up to a minute.\n\nWHICH POINTS USE FAST (1 SECOND) — LIFE SAFETY:\n- Pressurization alarms (room pressure deviation)\n- Flow alarms (exhaust/supply fault)\n- Face velocity alarms (containment breach)\n- Emergency mode active/inactive\n- Communication fault (loss of PBC)\n\nWHICH POINTS USE NORMAL: CFM actual values, face velocity actual, setpoints.\nWHICH POINTS USE SLOW: Energy reporting CFM totals, temperature/humidity trending, noncritical archive.\n\nPOLL SCHEDULER: Keep below 75%. Life safety points justify Fast polling — all non-safety points use Normal or Slow."
+  },
+  {
+    "id": "qa_n4_bacnet_setup_stepbystep",
+    "topic": "Complete step-by-step process for setting up BACnet network driver in Niagara 4 to communicate with Phoenix Controls PBCs",
+    "category": "Niagara 4",
+    "tags": [
+      "BacnetNetwork",
+      "Drivers",
+      "Discover",
+      "Enabled",
+      "UDP",
+      "47808",
+      "proxy point",
+      "tuning policy",
+      "Device Instance",
+      "BBMD",
+      "setup",
+      "step-by-step",
+      "PBC",
+      "Niagara 4"
+    ],
+    "content": "BACNET DRIVER SETUP IN NIAGARA 4 FOR PHOENIX CONTROLS PBCs — EXACT STEPS\n\nSTEP 1: Open Workbench, connect to Station, go to Config > Drivers.\nSTEP 2: From BACnet palette, drag BacnetNetwork onto Drivers. If one exists, open it.\nSTEP 3: Set Enabled = true. Driver does nothing while Enabled is false.\nSTEP 4: Set Local Device Instance (unique on entire BACnet network), UDP port 47808 (default BACnet/IP port — must be open in firewall).\nSTEP 5: Configure BBMD if PBCs are on different subnet/VLAN. Without BBMD, BACnet/IP broadcasts don't cross VLANs and PBCs won't appear in Discover.\nSTEP 6: Right-click BacnetNetwork > Actions > Discover. Wait 30-60 seconds.\nSTEP 7: Select discovered PBCs, click Add. Verify each Device Instance matches PBC configuration.\nSTEP 8: Under each PBC device, create proxy points for each BACnet object needed (AI, AO, BV, MSO).\nSTEP 9: Assign tuning policy to every proxy point:\n  Fast (~1 second): life safety — pressurization alarms, flow alarms, emergency mode\n  Normal: general monitoring — CFM actual, face velocity, setpoints\n  Slow: energy reporting, noncritical trends\nSTEP 10: Verify proxy points show live data (not stale, null, or fault)."
+  },
+  {
+    "id": "qa_n4_pbc_not_in_discovery",
+    "topic": "PBC not showing up in Niagara 4 BACnet device discovery — all six causes BBMD Device Instance baud rate MS/TP termination duplicate",
+    "category": "Niagara 4",
+    "tags": [
+      "PBC",
+      "discovery",
+      "BBMD",
+      "Device Instance",
+      "baud rate",
+      "MS/TP",
+      "termination",
+      "duplicate",
+      "Enabled",
+      "UDP",
+      "47808",
+      "not showing",
+      "six causes"
+    ],
+    "content": "PBC NOT IN NIAGARA 4 DISCOVERY — SIX CAUSES\n\nCAUSE 1 — BBMD NOT CONFIGURED: PBC on different subnet/VLAN. BACnet/IP broadcasts don't cross VLANs without BBMD. Add BBMD entry in BacnetNetwork.\n\nCAUSE 2 — DUPLICATE DEVICE INSTANCE: Two devices share same Device Instance. Only one responds. All Device Instances must be unique across the entire BACnet internetwork.\n\nCAUSE 3 — BACNETNETWORK ENABLED = FALSE: Driver is disabled. Open BacnetNetwork properties, set Enabled = true.\n\nCAUSE 4 — BAUD RATE MISMATCH ON MS/TP: PBC baud rate doesn't match MS/TP trunk. Verify baud rate on PBC matches all ACMs and JACE MS/TP port.\n\nCAUSE 5 — RS485 TERMINATION PROBLEM: Missing or misplaced 120-ohm end-of-line termination on MS/TP trunk. 120-ohm EOL resistors must be at both physical ends of trunk only — not in the middle.\n\nCAUSE 6 — DUPLICATE MAC ADDRESS ON MS/TP: Two devices on same trunk share same MAC address. Collision makes both unreliable. Document and verify all MAC addresses.\n\nALSO CHECK: UDP port 47808 blocked by firewall, PBC still booting, PBC in fault state, IP unreachable."
+  },
+  {
+    "id": "qa_pressure_units_wc",
+    "topic": "Minimum differential pressure for Phoenix Controls venturi valve ±5% accuracy — 0.3 inches w.c.",
+    "category": "CSCP Hardware",
+    "tags": [
+      "differential pressure",
+      "w.c.",
+      "inches",
+      "in. w.c.",
+      "0.3",
+      "0.1",
+      "accuracy",
+      "±5%",
+      "low pressure",
+      "medium pressure",
+      "venturi valve"
+    ],
+    "content": "MINIMUM DIFFERENTIAL PRESSURE — PHOENIX CONTROLS VENTURI VALVE ±5% ACCURACY\n\nANSWER — ALWAYS EXPRESS IN INCHES W.C.:\nLow-pressure venturi valves: minimum 0.3 inches w.c. (in. w.c.) for guaranteed ±5% accuracy.\nThe valve operates down to 0.1 in. w.c. but accuracy is NOT guaranteed below 0.3 in. w.c.\nMedium-pressure valves: minimum 0.3 in. w.c. (75 Pa).\n\nCORRECT EXPRESSION: \"0.3 in. w.c.\" or \"0.3 inches w.c.\" — never just \"0.3 WC\" without the \"inches.\"\n\nFIELD SYMPTOMS OF LOW DIFFERENTIAL PRESSURE: flow readings inconsistent, valve hunts, accuracy degrades. The mechanical system (fans, ductwork) must provide adequate static pressure — controls cannot compensate for insufficient mechanical static."
+  },
+  {
+    "id": "qa_ip_transducer_420_315",
+    "topic": "I/P transducer signal range pneumatic Phoenix Controls valves — 4-20mA input 3-15 PSI output",
+    "category": "Pneumatic",
+    "tags": [
+      "I/P",
+      "transducer",
+      "4-20mA",
+      "4-20",
+      "3-15",
+      "3-15 PSI",
+      "PSI",
+      "mA",
+      "signal range",
+      "pneumatic",
+      "input",
+      "output"
+    ],
+    "content": "I/P TRANSDUCER SIGNAL RANGE — PHOENIX CONTROLS PNEUMATIC VALVES\n\nINPUT: 4-20 mA DC (electrical current signal from MIJ/controller)\nOUTPUT: 3-15 PSI (pneumatic pressure to actuator)\n\nMAPPING:\n- 4 mA → 3 PSI (minimum/fail/spring return position)\n- 12 mA → 9 PSI (midstroke)\n- 20 mA → 15 PSI (full stroke maximum)\n\nThe values are 4-20 mA in and 3-15 PSI out. The 4 mA minimum (not 0) allows broken wire detection — 0 mA means fault, not minimum position.\n\nSIGNAL SOURCE: MIJ terminal block (TB) outputs 4-20 mA. Flow Command (red wire at TB) carries the 4-20 mA signal to the I/P transducer.\n\nFIELD CHECK: Apply known mA signal from calibrator, measure PSI output at I/P output port. Should track linearly 3-15 PSI as input goes 4-20 mA."
+  },
+  {
+    "id": "qa_commissioning_first_step",
+    "topic": "First step before commissioning any Phoenix Controls system — verify mechanical readiness air balancing ductwork",
+    "category": "Commissioning",
+    "tags": [
+      "first step",
+      "commissioning",
+      "mechanical",
+      "air",
+      "balancing",
+      "ductwork",
+      "fans",
+      "installation",
+      "complete",
+      "pre-commissioning",
+      "TAB",
+      "air balancing",
+      "readiness"
+    ],
+    "content": "FIRST STEP BEFORE COMMISSIONING ANY PHOENIX CONTROLS SYSTEM\n\nTHE FIRST STEP: VERIFY MECHANICAL READINESS\n\nBefore touching any controls parameter, verify:\n1. Ductwork: complete and sealed — no open sections\n2. Air available: fans running at design conditions\n3. Air balancing (TAB): mechanical system capable of delivering design airflows. If air balancing is not complete, controls will be calibrated against wrong conditions.\n4. Dampers: installed, open, functional\n5. Filters: installed\n6. Valves: physically installed correctly\n7. Wiring and tubing: complete and terminated\n\nKeywords that must appear: mechanical, air, balancing.\n\nDO NOT BEGIN if fans are not running, ductwork has open sections, or air balancing has not been performed. Controls cannot compensate for a deficient mechanical system."
+  },
+  {
+    "id": "qa_null_propagate_statusnumeric",
+    "topic": "kitControl Add block outputs null — null propagation from input stale status, StatusNumeric diagnosis",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "null",
+      "propagate",
+      "null propagation",
+      "input stale",
+      "StatusNumeric",
+      "Add block",
+      "kitControl",
+      "stale",
+      "bad status",
+      "Force Read",
+      "tuning policy",
+      "proxy point"
+    ],
+    "content": "KITCONTROL ADD BLOCK OUTPUTS NULL — NULL PROPAGATION AND STATUSNUMERIC\n\nROOT CAUSE: NULL PROPAGATES FROM INPUT STATUS\nThe Add block outputs null when either input has bad status — even if the displayed value looks valid. This is null propagation. The displayed number may be a cached stale value; the internal status is bad.\n\nTHE TRAP: Proxy point shows \"234 CFM\" but status is stale. Add block reads the status quality, not just the number. Bad status → null output.\n\nHOW TO DIAGNOSE WITH STATUSNUMERIC:\n1. Add StatusNumeric block to each input proxy point in the wire sheet\n2. StatusNumeric exposes both value AND status quality separately\n3. Check the status output: stale? fault? null? overridden?\n4. \"Stale\" = proxy point not receiving fresh data even though a number is displayed\n\nCOMPLETE DIAGNOSIS:\n1. Force Read each input proxy point (right-click > Actions > Force Read)\n   — If value updates: polling works but tuning policy is Slow. Switch to Normal.\n   — If value doesn't update: communication/subscription problem\n2. Add StatusNumeric to each input: confirm status quality\n3. Fix data path if stale: BBMD, COV subscription, Device Instance, network connectivity\n\nREMEMBER: \"null propagates\" = one bad-status input makes entire math output null. Fix the input status, not the math block itself."
+  },
+  {
+    "id": "qa_cscp_partial_acm_mac_rs485",
+    "topic": "PBC communicating with only 14 of 20 ACMs — MAC duplicate RS485 diagnostic sequence",
+    "category": "CSCP Troubleshooting",
+    "tags": [
+      "PBC",
+      "ACM",
+      "offline",
+      "MAC",
+      "duplicate",
+      "RS485",
+      "MS/TP",
+      "daisy chain",
+      "termination",
+      "baud",
+      "end-of-line",
+      "partial",
+      "communication",
+      "14 of 20"
+    ],
+    "content": "PBC PARTIAL ACM FAILURE — 14 OF 20 ONLINE — MAC, RS485, COMPLETE DIAGNOSTIC\n\nSCENARIO: PBC sees 14 ACMs, 6 offline. This is a partial trunk failure.\n\nCAUSE 1 — RS485 DAISY CHAIN BREAK: RS485 devices connect in series. A break or loose connection mid-chain isolates all devices downstream. Check every RS485 terminal connection on the trunk.\n\nCAUSE 2 — END-OF-LINE TERMINATION MID-CHAIN: 120-ohm EOL resistors must be at both physical ends of trunk ONLY. A termination resistor placed mid-chain terminates the signal there — all devices beyond it are isolated.\n\nCAUSE 3 — DUPLICATE MAC ADDRESS: Two ACMs with the same MAC address collide. One wins, one goes offline. Can also destabilize nearby devices. Document and verify every MAC address. Change any duplicates.\n\nCAUSE 4 — BAUD RATE MISMATCH: ACM at wrong baud rate is invisible to PBC. Verify baud rate on every ACM matches PBC trunk setting.\n\nCAUSE 5 — RS485 POLARITY: Reversed A(+) and B(-) terminals cause segment failure. Verify polarity throughout trunk.\n\nCAUSE 6 — POWER: Verify 24VAC at each offline ACM location.\n\nSUMMARY KEYWORDS FOR THIS QUESTION: MAC, duplicate, RS485, daisy chain, termination, baud, end-of-line."
+  },
+  {
+    "id": "qa_pneumatic_restriction_orifice",
+    "topic": "Pneumatic valve slow to respond 45 seconds — restriction orifice air supply tubing length leak",
+    "category": "Pneumatic",
+    "tags": [
+      "restriction",
+      "orifice",
+      "air supply",
+      "slow",
+      "45 seconds",
+      "response",
+      "pneumatic",
+      "tubing",
+      "length",
+      "actuator",
+      "I/P",
+      "leak",
+      "supply pressure",
+      "regulator"
+    ],
+    "content": "PNEUMATIC VALVE SLOW RESPONSE (45 SECONDS) — ALL CAUSES\n\nCAUSE 1 — RESTRICTION IN TUBING: Kink, pinch, or undersized fitting limits airflow. Inspect entire tubing run for kinks, sharp bends, or crushed sections.\n\nCAUSE 2 — ORIFICE (plugged or undersized): Internal orifice in actuator or I/P limits flow rate. If tubing is clear and supply adequate, orifice is next suspect. Clean or replace per manufacturer spec.\n\nCAUSE 3 — AIR SUPPLY PRESSURE (low): Insufficient supply pressure (need 15-20 PSI at I/P input). Measure at regulator output — not at compressor. Check regulator setting.\n\nCAUSE 4 — TUBING LENGTH (too long): Long runs mean more volume to fill/exhaust. Even without restriction, very long runs slow response. Use pilot relay/booster for long runs.\n\nCAUSE 5 — AIR LEAK: Leak bleeds pressure faster than I/P supplies it. Listen for air at fittings. Perform decay test.\n\nCOMPLETE KEYWORD LIST FOR THIS QUESTION: restriction, orifice, air supply, length, leak, tubing, actuator, I/P."
+  },
+  {
+    "id": "qa_4hoods_2am_fire_wire_sheet",
+    "topic": "Four fume hoods maximum exhaust simultaneously 2am — fire alarm setpoint wire sheet ZPS schedule investigation",
+    "category": "Troubleshooting",
+    "tags": [
+      "four hoods",
+      "2am",
+      "maximum exhaust",
+      "fire",
+      "fire alarm",
+      "setpoint",
+      "wire sheet",
+      "ZPS",
+      "schedule",
+      "override",
+      "BACnet",
+      "priority",
+      "common cause",
+      "simultaneous"
+    ],
+    "content": "FOUR FUME HOODS MAX EXHAUST AT 2AM — ALL CAUSES INCLUDING FIRE AND WIRE SHEET\n\nCOMMON-CAUSE TRIGGER: All four going to max simultaneously = single shared trigger.\n\nCAUSE 1 — FIRE ALARM: Fire or smoke alarm wired to emergency exhaust input triggered at 2am. Common input wired to all four hoods. Check fire panel event log for 2am alarm.\n\nCAUSE 2 — SETPOINT/OVERRIDE NOT CLEARED: BACnet write to emergency command setpoint (Priority 3 or 8) not released after testing. Check BACnet priority array on all four emergency command points. Who wrote the override and when?\n\nCAUSE 3 — WIRE SHEET SHARED LOGIC: A shared BooleanWritable or shared trigger point in the wire sheet drives all four hoods from a single point. Trace wire sheet — is there a common emergency command point feeding all four?\n\nCAUSE 4 — ZPS FALSE TRIGGER: Zone Presence Sensor false detection forces occupied/emergency at Priority 8. Check ZPS status history for 2am.\n\nCAUSE 5 — SCHEDULE ERROR: Overnight schedule in emergency or occupied mode.\n\nINVESTIGATION: Niagara alarm history at 2am, BACnet priority array on all four emergency commands, wire sheet for shared trigger points, fire panel event log, ZPS status history.\n\nKEYWORDS: fire, setpoint, wire sheet, ZPS, schedule, BACnet priority."
+  },
+  {
+    "id": "qa_dcv_co2_schedule_override",
+    "topic": "Demand-controlled ventilation Phoenix Controls lab — CO2 sensor schedule override minimum pressurization offset implementation",
+    "category": "Controls",
+    "tags": [
+      "DCV",
+      "demand-controlled ventilation",
+      "CO2",
+      "schedule",
+      "override",
+      "minimum",
+      "offset",
+      "pressurization",
+      "setpoint",
+      "occupancy",
+      "kitControl",
+      "NumericWritable",
+      "BooleanWritable",
+      "priority"
+    ],
+    "content": "DEMAND-CONTROLLED VENTILATION — CO2, SCHEDULE, AND OVERRIDE\n\nDCV reduces ventilation when CO2/occupancy is low. Must never violate minimum pressurization offset.\n\nCO2 INTEGRATION:\n1. CO2 proxy point feeds reset calculation — higher CO2 = more ventilation\n2. Max block: compare CO2 demand vs minimum offset floor — always output the higher value\n3. Minimum offset NumericWritable: holds design offset CFM as non-negotiable floor\n\nSCHEDULE INTEGRATION:\n1. WeeklySchedule: occupied/unoccupied Boolean output\n2. During occupied hours: full design CFM (DCV may allow reduction from CO2)\n3. During unoccupied hours: allow DCV reduction down to CO2-driven minimum\n4. 24/7 labs: WeeklySchedule all-occupied or constant true BooleanWritable\n\nOVERRIDE PRIORITY:\n- Priority 3: emergency override (maximum exhaust, overrides everything)\n- Priority 8: local override (sash open, ZPS, operator)\n- Priority 14: schedule\nDCV logic should write at Priority 14 or below so any override at 8 takes precedence.\n\nKEY RULE: DCV cannot reduce exhaust below the level needed to maintain design pressurization offset. The Max block enforces this — output = max(CO2 demand, minimum offset requirement).\n\nKEYWORDS: CO2, schedule, override, minimum, offset, pressurization, BooleanWritable, NumericWritable, priority, kitControl."
   }
 ]
