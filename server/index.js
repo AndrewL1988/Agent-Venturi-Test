@@ -11,7 +11,13 @@ const { createClient }              = require("@supabase/supabase-js");
 const ws                             = require("ws");
 const OpenAI                         = require("openai");
 // @clerk/express — current recommended Clerk SDK for Express
-const { clerkMiddleware, getAuth, requireAuth } = require("@clerk/express");
+const { clerkMiddleware, getAuth, requireAuth, createClerkClient } = require("@clerk/express");
+
+// Clerk backend client for fetching user metadata
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY || process.env.REACT_APP_CLERK_PUBLISHABLE_KEY,
+});
 
 // ============================================================
 // SAFEGUARD 0 — ENVIRONMENT VARIABLE CONFIGURATION
@@ -668,24 +674,32 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
     return res.status(401).json({ error: "Sign in required to use Agent Venturi.", signInRequired: true });
   }
 
-  // Get user role from Clerk public metadata
-  const authObj = getAuth(req);
-  const userMeta = authObj?.sessionClaims?.publicMetadata || {};
-  const tierCheck = checkUserTier(userId, userMeta);
-
-  if (!tierCheck.allowed) {
-    return res.status(429).json({
-      error     : `Daily limit reached. You've used all ${CFG.FREE_DAILY_LIMIT} free questions today. Upgrade to Pro for unlimited access, or wait ${tierCheck.hoursLeft} hour${tierCheck.hoursLeft === 1 ? "" : "s"}.`,
-      freeLimit : true,
-      tier      : "free",
-      resetAt   : tierCheck.resetAt,
-      hoursLeft : tierCheck.hoursLeft,
-    });
+  // Get user role from Clerk — fetch from backend API (publicMetadata not in JWT)
+  let userRole = "free";
+  try {
+    const clerkUser = await clerkClient.users.getUser(userId);
+    userRole = clerkUser?.publicMetadata?.role || "free";
+  } catch (e) {
+    log("WARN", "Could not fetch Clerk user metadata — defaulting to free tier", { error: e.message });
   }
 
-  // Send tier info and remaining questions to frontend
-  res.setHeader("X-User-Tier", tierCheck.tier);
-  if (!tierCheck.unlimited) {
+  // Admin and pro bypass all limits entirely
+  if (userRole === "admin" || userRole === "pro") {
+    res.setHeader("X-User-Tier", userRole);
+    // fall through to AI call — no limit check needed
+  } else {
+    // Free tier: 30 questions per 24hr window
+    const tierCheck = checkUserTier(userId, { role: userRole });
+    if (!tierCheck.allowed) {
+      return res.status(429).json({
+        error     : `Daily limit reached. You've used all ${CFG.FREE_DAILY_LIMIT} free questions today. Contact your administrator to upgrade, or wait ${tierCheck.hoursLeft} hour${tierCheck.hoursLeft === 1 ? "" : "s"}.`,
+        freeLimit : true,
+        tier      : "free",
+        resetAt   : tierCheck.resetAt,
+        hoursLeft : tierCheck.hoursLeft,
+      });
+    }
+    res.setHeader("X-User-Tier", "free");
     res.setHeader("X-Free-Remaining", tierCheck.remaining);
     res.setHeader("X-Free-Reset", tierCheck.resetAt);
   }
@@ -735,7 +749,6 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
   const runAI = async () => {
   // ── Model enforcement by tier ─────────────────────────────────
   const requestedModel = model || "claude-sonnet-4-6";
-  const userRole = userMeta?.role || "free";
   const isFree = userRole !== "admin" && userRole !== "pro";
   const effectiveModel = isFree ? "claude-haiku-4-5-20251001" : requestedModel;
 
