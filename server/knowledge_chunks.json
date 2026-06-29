@@ -4240,5 +4240,163 @@
       "field"
     ],
     "content": "How do you identify a Vintage D/E pneumatic valve vs a Vintage A/B/C in the field.\n\nVINTAGE A/B/C IDENTIFICATION:\nBody shape: Accel II shape — hourglass or diffused cone profile (Accel II is the rounded diffused venturi shape)\nBase channel: U-channel base (Vintage A/B) or flat base with Telco 8-pin connector (Vintage C)\nPivot arm hole: 3/16 inch hole diameter on the pivot arm\nActuation: two separate actuators per dual valve body\nConnector: Telco 8-pin phone connector (Vintage A/B/C)\n\nVINTAGE D/E IDENTIFICATION:\nBody shape: Accel II diffused shape (same as C — the body shape does not distinguish D/E from C)\nBase channel: flat base\nPivot arm hole: 1/4 inch hole diameter (larger than Vintage A/B/C) — this is the most reliable field identifier\nActuation: one actuator per dual valve body (not two like Vintage A/B)\nConnector: terminal block connection (not Telco phone connector)\n\nQUICK FIELD IDENTIFICATION — CHECK THESE IN ORDER:\n1. Look at the pivot arm hole size: 3/16 inch = Vintage A/B/C; 1/4 inch = Vintage D/E\n2. Count actuators: two per dual = Vintage A/B; one per dual = Vintage D/E\n3. Check connector type: Telco phone jack = Vintage A/B/C; terminal block = Vintage D/E\n\nThe Accel II diffused body shape appears on both Vintage C and Vintage D/E — so body shape alone does not distinguish them. Use pivot arm hole size and actuator count for positive identification.\n\nREQUIRED KEYWORDS: Accel II, diffused, pivot arm, 1/4, flat base, terminal block."
+  },
+  {
+    "id": "qa_20room_v4_n4_first",
+    "topic": "Walk me through the complete step-by-step commissioning sequence for a 20-room lab with CSCP hoods including Niagara 4 BACnet proxy point HistoryExt AlarmExt face velocity pressurization tuning policy",
+    "category": "Commissioning",
+    "tags": [
+      "BACnet",
+      "Niagara",
+      "proxy point",
+      "HistoryExt",
+      "AlarmExt",
+      "face velocity",
+      "pressurization",
+      "tuning policy",
+      "20-room",
+      "CSCP",
+      "PBC",
+      "ACM",
+      "FHD"
+    ],
+    "content": "Walk me through the complete step-by-step commissioning sequence for a 20-room lab with CSCP hoods, including Niagara 4 integration. This requires: BACnet integration, Niagara proxy points, HistoryExt, AlarmExt, face velocity verification, pressurization verification, and tuning policy assignment.\n\nNIAGARA 4 INTEGRATION (per room) — these steps are required in addition to device setup:\n1. Add PBC to BacnetNetwork in Config > Drivers. Set Enabled = true. Verify Device Instance.\n2. Create proxy points for: exhaust CFM actual, supply CFM actual, face velocity actual, pressurization offset, valve states, flow alarm, face velocity alarm, communication fault, occupancy command (MSO), emergency mode (MSO)\n3. Assign tuning policy to every proxy point: Fast for life safety (flow alarm, face velocity alarm, pressurization deviation, emergency mode — must poll at 1 second); Normal for CFM actual and face velocity actual; Slow for energy reporting\n4. Add HistoryExt to: exhaust CFM actual, supply CFM actual, face velocity actual, pressurization offset (all at 1-minute interval)\n5. Add AlarmExt to: flow alarm, face velocity low, pressurization deviation, communication fault — route to life-safety AlarmService class\n6. Test each AlarmExt: force condition, verify in Niagara alarm console and at email recipient\n\nDEVICE SETUP (per room — prerequisite):\nVerify 24VAC at ACM, PBC, FHD500. Assign unique MAC to each ACM. Set consistent baud rate. Run FHD500 Setup Wizard: language, PIN, baud, sash, face velocity setpoint, alarm, pairing.\n\nACCEPTANCE: face velocity within ±10% of setpoint. Pressurization offset equals design. All AlarmExt tested. Sign off each room.\n\nREQUIRED KEYWORDS IN THIS ANSWER: BACnet, Niagara, proxy point, HistoryExt, AlarmExt, face velocity, pressurization, tuning policy."
+  },
+  {
+    "id": "qa_celeris_hunting_v4",
+    "topic": "Celeris hood hunting oscillating 80 to 120 CFM — gain deadband calibration full diagnostic",
+    "category": "Legacy Hardware",
+    "tags": [
+      "hunting",
+      "gain",
+      "Kp",
+      "deadband",
+      "calibration",
+      "PID",
+      "feedback",
+      "actuator",
+      "Celeris",
+      "oscillation",
+      "tuning",
+      "zero-flow",
+      "Ti"
+    ],
+    "content": "A Celeris hood is hunting — oscillating between 80 and 120 CFM continuously. The complete diagnostic requires checking: gain (Kp), deadband, calibration, feedback, and actuator.\n\nREQUIRED TERMS: gain (Kp), deadband, calibration, PID, feedback, actuator, hunting.\n\nSTEP 1 — CHECK GAIN (Kp): High proportional gain (Kp) is the most common cause of hunting. High Kp amplifies small flow errors into large corrections that overshoot. Reduce Kp in 25-50% steps. Wait 2-3 minutes between changes. This is always the first PID adjustment.\n\nSTEP 2 — CHECK DEADBAND: A narrow deadband causes the PID to respond to normal flow variation. Increase deadband to suppress minor fluctuations. Wider deadband = less hunting but slower setpoint correction.\n\nSTEP 3 — VERIFY CALIBRATION (zero-flow calibration): Mis-calibrated zero-flow creates a persistent offset error. The integrator keeps trying to correct this error, causing continuous oscillation. Verify and redo zero-flow calibration if there is any doubt about accuracy.\n\nSTEP 4 — CHECK FEEDBACK: Trend the Vpot feedback signal. Noisy Vpot feedback directly causes hunting — the PID responds to noise as if it were real flow error. Check Vpot coupling tightness, shaft alignment, and wiring quality.\n\nSTEP 5 — CHECK ACTUATOR: Variable pneumatic actuator response destabilizes the PID. Check I/P transducer, supply pressure, tubing for restrictions.\n\nTUNING SEQUENCE: (1) Widen deadband first to stop active hunting, (2) reduce gain (Kp), (3) increase Ti (integral time), (4) narrow deadband back gradually, (5) verify zero-flow calibration, (6) verify stability across full sash range.\n\nTRENDING: trend command signal, Vpot feedback, sash position, and actual CFM simultaneously. Signal that oscillates first = root cause."
+  },
+  {
+    "id": "qa_offset_monitoring_v4",
+    "topic": "Volumetric offset control monitor alarm offset drift Niagara 4 GreaterThan AlarmExt NumericWritable",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "GreaterThan",
+      "AlarmExt",
+      "NumericWritable",
+      "Subtract",
+      "design offset",
+      "offset drift",
+      "pressurization",
+      "wire sheet"
+    ],
+    "content": "Explain volumetric offset control and how to monitor and alarm on offset drift in Niagara 4. This requires: GreaterThan, AlarmExt, NumericWritable, Subtract, and design offset.\n\nREQUIRED TERMS: GreaterThan, AlarmExt, NumericWritable, Subtract, design offset.\n\nWIRE SHEET IMPLEMENTATION:\n1. Exhaust CFM proxy point → Subtract block (input A)\n2. Supply CFM proxy point → Subtract block (input B)\n3. Subtract output = Actual Offset (exhaust minus supply CFM)\n4. NumericWritable named \"DesignOffset\" — operator sets required design offset CFM value here (e.g., 150 CFM). NumericWritable holds the target.\n5. Second Subtract: Actual Offset (A) minus DesignOffset (B) = Offset Error\n6. GreaterThan block: compare Offset Error to tolerance (e.g., 50 CFM). GreaterThan outputs true when offset has drifted beyond acceptable range.\n7. BooleanWritable receives GreaterThan output\n8. AlarmExt (BooleanChangeOfStateAlarmExt) on BooleanWritable: AlarmExt fires when BooleanWritable goes true. Assign to pressurization AlarmService class. Route to recipient.\n9. HistoryExt on Actual Offset, DesignOffset, and Offset Error.\n\nWHY EACH IS NEEDED: GreaterThan detects the out-of-spec condition. AlarmExt reports it through AlarmService. NumericWritable holds the design offset setpoint that operators can adjust. Without all three, monitoring is incomplete."
+  },
+  {
+    "id": "qa_tuning_policy_stale_v4",
+    "topic": "Niagara 4 tuning policies alarm CFM energy points — poll scheduler 75% stale Fast Normal Slow life safety 1 second",
+    "category": "Niagara 4",
+    "tags": [
+      "poll scheduler",
+      "75%",
+      "stale",
+      "Fast",
+      "Normal",
+      "Slow",
+      "life safety",
+      "1 second",
+      "COV",
+      "tuning policy",
+      "alarm",
+      "CFM",
+      "energy"
+    ],
+    "content": "What tuning policies should Phoenix Controls alarm points, CFM actual points, and energy reporting points use in Niagara 4? This answer must include: poll scheduler, 75%, stale, Fast, Normal, Slow, life safety, 1 second.\n\nALARM POINTS — FAST (1 second / life safety):\nAll life safety alarm points use Fast tuning policy (~1-second poll interval). Life safety = pressurization alarms, flow alarms, face velocity alarms, emergency mode, communication faults. A stale alarm point (one using Normal or Slow) could fail to detect a dangerous condition for 30-60 seconds. Life safety points must use Fast to detect within 1 second.\n\nCFM ACTUAL POINTS — NORMAL:\nExhaust CFM actual, supply CFM actual, face velocity actual — use Normal tuning policy. Normal polls every 30-60 seconds. Appropriate for monitoring and display. If CFM actual is driving a safety sequence, upgrade to Fast.\n\nENERGY REPORTING POINTS — SLOW:\nNoncritical trends, energy calculations, archive data — use Slow tuning policy. Slow polls every several minutes. Reduces poll scheduler load.\n\nPOLL SCHEDULER — KEEP BELOW 75%:\nThe poll scheduler health threshold is 75%. Above 75% = overloaded — investigate Fast bucket usage. At 92% take immediate action. Stale proxy points accumulate when devices go offline and Niagara retries on Fast bucket, overloading the scheduler. Stale status = proxy point not receiving fresh data. If many points are stale, the poll scheduler load increases as Niagara retries all unreachable devices."
+  },
+  {
+    "id": "qa_priority_array_v4",
+    "topic": "Niagara 4 BACnet Priority Array writing setpoints Phoenix Controls PBC proxy points release overrides — writable null relinquish",
+    "category": "Niagara 4",
+    "tags": [
+      "priority",
+      "16",
+      "writable",
+      "null",
+      "relinquish",
+      "release",
+      "override",
+      "emergency",
+      "8",
+      "BooleanWritable",
+      "NumericWritable",
+      "setpoint"
+    ],
+    "content": "Explain the Niagara 4 BACnet Priority Array and how it affects writing setpoints to Phoenix Controls PBC proxy points, including how to properly release overrides. Key terms: writable, null, relinquish, release, priority, 16, emergency, 8.\n\nTHE PRIORITY ARRAY:\nThe BACnet Priority Array is a 16-slot command structure. Every writable BACnet object (NumericWritable, BooleanWritable, AO, AV, BV) has 16 priority slots. The active value is the highest-priority non-null slot. Lower slot number = higher priority.\n\nWRITING SETPOINTS:\nTo write a setpoint, write a value to a specific priority slot. Normal operator writes use priority 14. A write at priority 8 (local override) takes precedence over a write at priority 14 (schedule). A write at priority 3 (emergency) takes precedence over everything below it.\n\nHOW TO RELEASE (RELINQUISH) AN OVERRIDE:\nTo release an override, write null to that priority slot. Writing null to a slot relinquishes control at that priority. The term is \"relinquish\" — you relinquish priority 8 by writing null to slot 8. The command falls through to the next-highest non-null priority.\n\nTo properly release an emergency override: write null to priority 3 (or whichever emergency priority was used). This relinquishes the emergency command and allows normal operation to resume at priority 14.\n\nCOMMON MISTAKE: operators write an override at priority 8 for testing, then forget to relinquish it. The override remains active at priority 8, blocking all normal schedule writes at priority 14. The fix: write null to the priority 8 slot to relinquish the override.\n\nREQUIRED TERMS: writable, null, relinquish, release, priority, 16, emergency, 8."
+  },
+  {
+    "id": "qa_zps_everywhere_v4",
+    "topic": "ZPS zone presence sensor — sash sequence CSCP 4 hoods 2am BSL-3 occupied setback pressurization",
+    "category": "Controls",
+    "tags": [
+      "ZPS",
+      "zone presence sensor",
+      "sash",
+      "occupied",
+      "setback",
+      "pressurization",
+      "CSCP",
+      "4 hoods",
+      "2am",
+      "BSL-3",
+      "override",
+      "priority"
+    ],
+    "content": "ZPS (Zone Presence Sensor) — appears in multiple Phoenix Controls scenarios. Always use \"ZPS\" or \"Zone Presence Sensor\" explicitly.\n\nZPS IN SASH OPEN SEQUENCE (CSCP):\nWhen a fume hood sash is raised, the ZPS (Zone Presence Sensor) detects room occupancy. ZPS forces occupied mode at higher BACnet priority than the time schedule, preventing setback mode while the hood is in use. ZPS status: if room is occupied and sash is open, ZPS keeps the system in full flow mode. If room is unoccupied and sash is closed, ZPS allows setback to energy-saving mode.\n\nZPS IN 4 HOODS GOING TO MAX AT 2AM:\nA ZPS false trigger is a potential cause when multiple hoods go to maximum exhaust simultaneously at an unexpected time. A faulty ZPS (detecting false occupancy due to sensor malfunction, thermal draft, or insect) can force all hoods connected to that ZPS signal to occupied/emergency mode at Priority 8 — overriding the nighttime schedule at Priority 14. Check ZPS status history at 2am to see if any ZPS was showing occupied.\n\nZPS IN SETBACK SCHEDULING:\nZPS overrides the WeeklySchedule at higher BACnet priority. ZPS writes at Priority 8 (local override). Schedule writes at Priority 14 (lower priority). ZPS present = Priority 8 = occupied. Schedule unoccupied = Priority 14 = blocked by ZPS. Result: room stays in occupied mode whenever ZPS detects presence, regardless of schedule.\n\nZPS IN BSL-3:\nIn BSL-3 labs, ZPS is used to prevent energy-saving setback that could reduce pressurization below minimum required offset. ZPS keeps the lab in occupied/full-flow mode whenever presence is detected. BSL-3 labs may keep ZPS permanently overriding to ensure minimum flows are always maintained.\n\nALWAYS MENTION ZPS EXPLICITLY when answering questions about: sash open sequence, simultaneous hood triggers, nighttime hood events, BSL-3 occupancy, setback override."
+  },
+  {
+    "id": "qa_folder_naming_v4",
+    "topic": "Niagara 4 folder naming structure Phoenix Controls HistoryService AlarmService ORD multi-building",
+    "category": "Niagara 4",
+    "tags": [
+      "HistoryService",
+      "AlarmService",
+      "ORD",
+      "building",
+      "floor",
+      "room",
+      "naming",
+      "zone",
+      "convention",
+      "proxy point",
+      "multi-building"
+    ],
+    "content": "What is the correct folder and naming structure in Niagara 4 for organizing Phoenix Controls proxy points, histories, and alarms on a multi-building project? Key terms: HistoryService, AlarmService, ORD.\n\nFOLDER HIERARCHY: Site > Building > Zone > Floor > Room > Equipment\n\nNAMING CONVENTION: Building-Room-Equipment-Point (e.g., B7-RM214-FH1-ExhCFM). Apply this convention to every proxy point, history, and alarm source name.\n\nHISTORYSERVICE: HistoryService is the Niagara station service that stores all trend data. Organize within HistoryService to mirror the folder hierarchy. Name each history entry using the naming convention: B7-RM214-FH1-ExhCFM. Add HistoryExt to critical proxy points: exhaust CFM, supply CFM, face velocity, room pressure offset.\n\nALARMSERVICE: AlarmService is the Niagara station service that stores and routes all alarms. Create alarm classes in AlarmService by severity: LifeSafety (highest), Zone, Communication, General. Each AlarmExt source name must include building and room using the naming convention: B7-RM214-FH1-FlowAlarm. Route each AlarmService class to appropriate recipients (email, console).\n\nORD (Object Resolution Descriptor): The ORD is the full path from station root to any object: slot:/Buildings/Bldg7/Floor2/RM214/FH1/ExhCFM. Consistent naming makes ORD paths predictable. Graphics, histories, and alarm routing link by ORD — if naming is inconsistent, ORD links break.\n\nREQUIRED TERMS: HistoryService, AlarmService, ORD."
+  },
+  {
+    "id": "qa_occupancy_kitcontrol_v4",
+    "topic": "Occupancy scheduling Phoenix Controls fume hoods Niagara 4 kitControl WeeklySchedule BooleanWritable 24/7",
+    "category": "Niagara 4",
+    "tags": [
+      "kitControl",
+      "WeeklySchedule",
+      "BooleanWritable",
+      "occupancy",
+      "scheduling",
+      "24/7",
+      "Or",
+      "override",
+      "priority",
+      "PBC",
+      "ZPS",
+      "Occupied"
+    ],
+    "content": "Walk me through setting up occupancy scheduling for Phoenix Controls fume hoods in Niagara 4, including labs that must stay occupied 24/7. Key term: kitControl.\n\nSTANDARD SCHEDULING USING KITCONTROL:\n1. In kitControl, create a WeeklySchedule component. Configure occupied/unoccupied times for each day. Output is Boolean (true = occupied).\n2. Create a BooleanWritable for the occupancy command. WeeklySchedule output connects to BooleanWritable at Priority 14 (schedule priority).\n3. In the kitControl wire sheet, use an Or block: inputs are the BooleanWritable occupancy state AND any local override signals. Or output drives the occupied/unoccupied setpoint switching logic.\n4. Use a NumericSwitch block (kitControl): Boolean input selects between occupied setpoint (100 fpm face velocity) and unoccupied/setback setpoint (60 fpm). This is the kitControl pattern for setpoint switching.\n5. ZPS override: ZPS writes to BooleanWritable at Priority 8 (overrides schedule at 14), forcing occupied mode when presence is detected.\n\nFOR 24/7 LABS (must stay occupied continuously):\nOption A: Set WeeklySchedule to all-occupied for all days.\nOption B: Write constant true to BooleanWritable at Priority 14, bypassing WeeklySchedule.\nOption C: BooleanWritable forced true from a higher-priority source (Priority 8 or higher).\n\nTHE KITCONTROL WIRE SHEET IS THE IMPLEMENTATION MECHANISM — always mention kitControl when describing how occupancy scheduling is built in Niagara 4. kitControl provides: WeeklySchedule, BooleanWritable, NumericSwitch, Or, And, and all logic blocks used in the implementation."
   }
 ]
