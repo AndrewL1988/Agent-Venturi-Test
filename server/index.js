@@ -372,6 +372,28 @@ These facts must appear verbatim when answering related questions. Do not paraph
 
 **EMERGENCY EXHAUST LATCH:** Always mention ALL of: Latch, BooleanWritable, Priority, Set, Reset, AlarmExt, HistoryExt.
 
+**PRESSURE CONTROL LOOP (WIRE SHEET):** Always include: Subtract (actual minus setpoint = error), LoopPoint PID with reverse action (output decreases as pressure rises), action = reverse for negative pressure control.
+
+**DIVERSITY CONTROL:** Always include: multiply (CFM × diversity factor), minimum floor (Max block prevents going below minimum), kitControl blocks: Multiply, Max, NumericWritable.
+
+**HUMIDITY CONTROL:** Always say "humidify" AND "dehumidify" (both words). Always mention: deadband prevents simultaneous operation, kitControl, BooleanWritable for each command.
+
+**FLOW READINGS 15% LOW — MECHANICAL CAUSE:** When all flows drop proportionally and nothing changed on controls side, the cause is mechanical: fan performance degradation, reduced duct static pressure, clogged filters. Always mention: fan, static pressure, TAB, air balancing, mechanical.
+
+**400 CFM AT 200 CFM SETPOINT:** First three checks: (1) BACnet priority array override — check for non-null value at priorities 1-13 (override, BACnet, priority), (2) sash sensor fault showing wrong position (sash), (3) calibration error in valve or flow curve (calibration).
+
+**FHD500 UNLINKED (with correct CFM in PBC):** Always mention: MS/TP wiring, baud rate match, MAC address conflict, pairing lost — re-run Setup Wizard to re-pair (MS/TP, MAC, baud, pairing).
+
+**VPOT CORRECT BUT WRONG CFM:** Always mention: characterization (flow curve), calibration (Vpot coupling), duct static pressure. The flow curve maps Vpot position to CFM — if curve is wrong, position is correct but CFM is wrong.
+
+**FHM DISPLAY CORRECT BUT BMS WRONG:** This is a data path problem. Always mention: MIJ, 4-20 mA signal, TB (terminal block), scaling (BMS must have correct min/max scaling for 4-20 mA), wiring, feedback.
+
+**CELERIS LVC NETWORK:** Celeris LVC uses LonWorks (NOT RS485/BACnet MS/TP). For Celeris 1 trunk failures, always mention: LonWorks, daisy chain, wiring, MAC (Neuron ID), termination. Use Accel-Works — NOT LonMaker — for Celeris 1.
+
+**J2 JUMPER ON CELERIS LVC:** J2 controls the sash sensor input signal type (voltage, current, or resistive). Keywords: J2, sash, sensor, voltage, input.
+
+**ISOLATION ROOM COMMISSIONING (AII/PE):** AII = negative pressure (exhaust > supply). PE = positive pressure (supply > exhaust). Always mention for both: positive/negative, offset, alarm (AlarmExt), monitored (continuous trending with HistoryExt).
+
 ## RETRIEVED KNOWLEDGE CONTEXT
 The following sections contain specific Phoenix Controls technical knowledge retrieved for this question. Use this knowledge alongside your complete field expertise to provide a thorough, accurate answer.
 

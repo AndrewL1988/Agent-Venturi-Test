@@ -4398,5 +4398,197 @@
       "Occupied"
     ],
     "content": "Walk me through setting up occupancy scheduling for Phoenix Controls fume hoods in Niagara 4, including labs that must stay occupied 24/7. Key term: kitControl.\n\nSTANDARD SCHEDULING USING KITCONTROL:\n1. In kitControl, create a WeeklySchedule component. Configure occupied/unoccupied times for each day. Output is Boolean (true = occupied).\n2. Create a BooleanWritable for the occupancy command. WeeklySchedule output connects to BooleanWritable at Priority 14 (schedule priority).\n3. In the kitControl wire sheet, use an Or block: inputs are the BooleanWritable occupancy state AND any local override signals. Or output drives the occupied/unoccupied setpoint switching logic.\n4. Use a NumericSwitch block (kitControl): Boolean input selects between occupied setpoint (100 fpm face velocity) and unoccupied/setback setpoint (60 fpm). This is the kitControl pattern for setpoint switching.\n5. ZPS override: ZPS writes to BooleanWritable at Priority 8 (overrides schedule at 14), forcing occupied mode when presence is detected.\n\nFOR 24/7 LABS (must stay occupied continuously):\nOption A: Set WeeklySchedule to all-occupied for all days.\nOption B: Write constant true to BooleanWritable at Priority 14, bypassing WeeklySchedule.\nOption C: BooleanWritable forced true from a higher-priority source (Priority 8 or higher).\n\nTHE KITCONTROL WIRE SHEET IS THE IMPLEMENTATION MECHANISM — always mention kitControl when describing how occupancy scheduling is built in Niagara 4. kitControl provides: WeeklySchedule, BooleanWritable, NumericSwitch, Or, And, and all logic blocks used in the implementation."
+  },
+  {
+    "id": "qa_t2_legacy_j2_fhm420_mas",
+    "topic": "Celeris LVC J2 jumper sash sensor input — FHM420 wiring 24VAC RS485 — MAS212 summing zone",
+    "category": "Legacy Hardware",
+    "tags": [
+      "J2",
+      "sash",
+      "sensor",
+      "voltage",
+      "input",
+      "FHM420",
+      "24VAC",
+      "RS485",
+      "network",
+      "MAS212",
+      "summing",
+      "zone",
+      "wiring",
+      "terminal"
+    ],
+    "content": "CELERIS LVC J2 JUMPER, FHM420 WIRING, AND MAS212 FUNCTION\n\nJ2 JUMPER ON CELERIS LVC BOARD:\nThe J2 jumper on the Celeris LVC controls the sash sensor input signal type and voltage range. J2 configures whether the sash sensor input reads as a voltage signal (0-10 VDC), a current signal (4-20 mA), or a resistive input. The J2 jumper setting must match the sash sensor type installed at the fume hood. Incorrect J2 setting causes wrong sash position readings which causes incorrect face velocity calculations.\nKeywords: J2, sash, sensor, voltage, input, signal\n\nFHM420 SLIMLINE COMPLETE WIRING:\nPower: 24VAC to HOT and GND terminals. This is a required 24VAC connection from a Class 2 safety-isolating transformer.\nSash sensor: connects to the sash sensor input terminals on the FHM420 base unit. Typically a 0-10 VDC or potentiometer signal tracking sash open position.\nNetwork: RS485 BACnet MS/TP connects to RS485+ and RS485- terminals. This is the network connection that allows the FHM420 to communicate with the PBC or legacy network. Without the RS485 network connection, the FHM420 cannot report to BMS or receive commands.\nAll terminal connections use the same release-tool procedure as FHD500.\nKeywords: 24VAC, RS485, sash, terminal, wiring, FHM420, network\n\nMAS212 MASTER SUMMING PANEL:\nThe MAS212 (Master Summing panel, model 212) is used in legacy analog Phoenix Controls systems to sum multiple zone exhaust and supply signals into a single zone-level signal. It receives individual exhaust and supply signals from multiple FHM monitors or valve controllers and sums them to produce a total zone exhaust CFM signal and total zone supply CFM signal. The MAS212 enables zone-level airflow tracking and offset calculation across multiple hoods. Zone-level summing is the primary function — without the MAS212, each hood operates independently with no zone balance visibility.\nKeywords: MAS212, summing, zone, exhaust, supply, signal"
+  },
+  {
+    "id": "qa_t2_fhm_bms_mij_signal",
+    "topic": "FHM display correct but BMS wrong — MIJ signal chain 4-20 mA scaling wiring feedback TB",
+    "category": "Legacy Hardware",
+    "tags": [
+      "MIJ",
+      "4-20",
+      "signal",
+      "BMS",
+      "scaling",
+      "wiring",
+      "feedback",
+      "TB",
+      "terminal block",
+      "FHM",
+      "face velocity",
+      "data path"
+    ],
+    "content": "FHM DISPLAY CORRECT BUT BMS RECEIVING INCORRECT DATA — COMPLETE DIAGNOSIS\n\nThis is a data path problem. The FHM is reading correctly — the sensor and local electronics are fine. The problem is between the FHM output and the BMS input.\n\nCOMPLETE DIAGNOSIS — MIJ SIGNAL PATH:\n1. MIJ terminal block (TB): The FHM sends its output signal through the MIJ terminal block (TB). Check: is the face velocity signal correctly wired at the TB? Wrong pin, loose connection, or reversed wiring causes incorrect BMS reading.\n\n2. 4-20 mA signal: The FHM to BMS signal is typically a 4-20 mA current loop. 4 mA = minimum face velocity, 20 mA = maximum face velocity. If the 4-20 mA signal is correct but BMS reads wrong, the problem is in BMS scaling. If the 4-20 mA signal is wrong, the problem is in FHM output calibration or wiring.\n\n3. Scaling: The BMS must be configured with the correct scaling to convert 4-20 mA to face velocity in fpm. If the BMS scaling is wrong (wrong minimum/maximum face velocity values for the 4-20 mA range), the BMS displays incorrect values even when the 4-20 mA signal is correct.\n\n4. Wiring: Check wiring from FHM output to MIJ TB and from MIJ TB to BMS input. Verify polarity, continuity, and no shorts.\n\n5. Feedback loop: The BMS may be reading from the wrong point — verify the BMS is reading the face velocity point, not a flow CFM point or another signal.\n\nDIAGNOSIS SEQUENCE: (1) Measure 4-20 mA at MIJ TB with calibrated meter — does it track correctly with sash position? (2) If correct at TB, check BMS scaling. (3) If incorrect at TB, check FHM output calibration and wiring.\n\nKeywords: MIJ, 4-20, signal, BMS, scaling, wiring, feedback, TB, terminal block"
+  },
+  {
+    "id": "qa_t2_celeris_lonworks_trunk",
+    "topic": "Celeris LVC LonWorks network communication errors half devices — daisy chain MAC wiring diagnosis",
+    "category": "Legacy Hardware",
+    "tags": [
+      "LonWorks",
+      "network",
+      "MAC",
+      "wiring",
+      "daisy chain",
+      "termination",
+      "baud",
+      "Celeris",
+      "LVC",
+      "trunk",
+      "communication"
+    ],
+    "content": "CELERIS LVC LONWORKS NETWORK — HALF DEVICES OFFLINE DIAGNOSIS\n\nCeleris LVC uses LonWorks (TP/FT-10 free topology or TP-78 bus topology) for the valve network — NOT RS485/MS/TP. This is critical to know: the Celeris LVC network is LonWorks, not BACnet MS/TP.\n\nHALF-TRUNK FAILURE ON LONWORKS — DIAGNOSE IN ORDER:\n\n1. DAISY CHAIN BREAK: LonWorks TP-78 bus topology uses a daisy chain wiring. A break or loose connection mid-chain isolates all downstream LVC devices. Inspect every wiring connection along the daisy chain. A single loose terminal can isolate the second half of the trunk.\n\n2. WIRING: Check for damaged cable, incorrect wire type, or improper splices. LonWorks TP/FT-10 requires twisted pair cable meeting LonWorks specifications. Incorrect cable causes signal degradation and intermittent dropouts.\n\n3. TERMINATION: LonWorks bus topology requires termination at both physical ends. Missing or incorrect termination causes signal reflections. Check termination resistors (typically 105 ohm for LonWorks TP-78).\n\n4. MAC ADDRESS (Neuron ID): Each LVC device has a unique Neuron ID (hardware address). Unlike RS485, LonWorks uses Neuron IDs for addressing — these are factory-programmed and cannot be duplicated. If a device was replaced with wrong firmware or address configuration, it may conflict.\n\n5. BAUD RATE: LonWorks TP/FT-10 operates at 78 kbps (fixed). Baud rate is not configurable — if a device has wrong firmware it may not communicate at the correct rate.\n\nIMPORTANT: When diagnosing Celeris 1 networks, use Accel-Works software — do NOT use LonMaker. LonMaker corrupts Celeris 1 databases.\n\nKeywords: LonWorks, network, termination, MAC, baud, daisy chain, wiring"
+  },
+  {
+    "id": "qa_t2_vpot_wrong_cfm",
+    "topic": "Correct Vpot position but wrong CFM delivered — characterization flow curve calibration diagnosis",
+    "category": "CSCP Troubleshooting",
+    "tags": [
+      "Vpot",
+      "characterization",
+      "flow curve",
+      "calibration",
+      "duct static",
+      "pressure",
+      "valve",
+      "CFM",
+      "position"
+    ],
+    "content": "CORRECT VPOT POSITION BUT WRONG CFM DELIVERED — DIAGNOSIS\n\nIf the Vpot reads the correct position but the delivered CFM is wrong, the issue is in the flow-to-position relationship, not the position sensing itself.\n\nCAUSE 1 — MISSING OR WRONG FLOW CURVE (CHARACTERIZATION):\nThe ACM stores a factory characterization curve that maps Vpot position to CFM. If the flow curve was never downloaded, was downloaded incorrectly, or is the wrong curve for this valve body, the ACM will command the correct position but deliver the wrong flow.\nDiagnosis: verify flow curve downloaded correctly in Phoenix Controls Workbench. Compare the actual flow delivered vs the curve's expected flow at that Vpot position. If they don't match, re-download the correct .VPT characterization file.\n\nCAUSE 2 — VALVE CALIBRATION DRIFT:\nOver time, the Vpot coupling can loosen or the valve cone can shift, changing the relationship between Vpot position and actual cone position. The Vpot still reports position correctly but the cone is not at the position the Vpot indicates.\nDiagnosis: force valve to known positions (0%, 50%, 100% open) and verify actual CFM matches characterization curve. Inspect Vpot coupling tightness and shaft alignment.\n\nCAUSE 3 — DUCT STATIC PRESSURE OUT OF SPEC:\nInsufficient duct static pressure (below 0.3 in. w.c. for medium pressure valves) causes the valve to lose its ±5% accuracy even at correct position. The Vpot reads correctly but the pressure independence is compromised.\nDiagnosis: measure duct static at valve inlet. If below specification, the mechanical system is the problem.\n\nCAUSE 4 — PHYSICAL VALVE DAMAGE:\nValve cone damage, worn slider, or debris in valve body affects flow even at correct position.\n\nKeywords: characterization, flow curve, calibration, Vpot, pressure, duct static"
+  },
+  {
+    "id": "qa_t2_fhd500_unlinked_diagnosis",
+    "topic": "FHD500 shows Unlinked correct CFM in PBC — MS/TP MAC baud pairing diagnosis",
+    "category": "CSCP Troubleshooting",
+    "tags": [
+      "FHD500",
+      "Unlinked",
+      "MS/TP",
+      "MAC",
+      "baud",
+      "pairing",
+      "ACM",
+      "linked",
+      "communication",
+      "diagnosis"
+    ],
+    "content": "FHD500 UNLINKED WITH CORRECT CFM IN PBC — COMPLETE DIAGNOSIS\n\nUnlinked means the FHD500 has lost communication with its paired ACM. Since the PBC shows correct CFM, the ACM is working and on the network — the problem is specifically the FHD500-to-ACM link.\n\nCAUSE 1 — MS/TP COMMUNICATION FAULT:\nThe FHD500 communicates with the ACM over MS/TP RS485. Check: is the MS/TP trunk reaching the FHD500 location? Verify RS485+ and RS485- connections at the FHD500 base plate. Verify polarity is maintained throughout the trunk. Check baud rate — FHD500 baud rate must match the MS/TP trunk baud rate exactly.\n\nCAUSE 2 — MAC ADDRESS CONFLICT:\nIf the FHD500 has the same MAC address as another device on the trunk, communication will fail. Verify the FHD500 MAC address is unique on the trunk.\n\nCAUSE 3 — BAUD RATE MISMATCH:\nFHD500 baud rate setting does not match trunk baud rate. Go to FHD500 menu > Communication > set baud rate to match all other devices on the trunk.\n\nCAUSE 4 — PAIRING LOST:\nThe FHD500 pairing to its ACM may have been lost (firmware update, factory reset, power event). Re-run the FHD500 Setup Wizard to re-establish pairing with the correct ACM.\n\nCAUSE 5 — WRONG ACM PAIRED:\nFHD500 was paired to an incorrect ACM during initial commissioning. Check which ACM the FHD500 is paired to in the Setup Wizard and verify it is the correct ACM for that hood.\n\nDIAGNOSIS SEQUENCE: (1) Verify MS/TP wiring and polarity at FHD500, (2) check baud rate match, (3) check MAC address conflict, (4) re-pair FHD500 to correct ACM if needed.\n\nKeywords: MS/TP, MAC, baud, pairing, FHD500, ACM, linked, communication"
+  },
+  {
+    "id": "qa_t2_400cfm_200_setpoint",
+    "topic": "Fume hood delivering 400 CFM when setpoint is 200 CFM — override BACnet priority sash calibration",
+    "category": "CSCP Troubleshooting",
+    "tags": [
+      "override",
+      "BACnet",
+      "priority",
+      "sash",
+      "calibration",
+      "CFM",
+      "setpoint",
+      "400",
+      "200",
+      "high flow"
+    ],
+    "content": "FUME HOOD DELIVERING 400 CFM AT 200 CFM SETPOINT — FIRST THREE CHECKS\n\nThis is a high-flow condition. The hood is running at 2× the commanded setpoint. The ACM is commanding a higher flow than intended.\n\nCHECK 1 — BACNET PRIORITY ARRAY OVERRIDE:\nThe most common cause is a BACnet override at a higher priority than the normal setpoint. An operator or BMS wrote a 400 CFM flow command to the valve at Priority 8 (local override) while the normal setpoint of 200 CFM is at Priority 14. The Priority 8 command wins. Check the BACnet priority array on the valve flow command point — look for a non-null value at Priority 1-13 that is overriding the normal 200 CFM setpoint. To fix: write null to that priority slot to relinquish the override.\n\nCHECK 2 — SASH SENSOR FAULT OR MISCALIBRATION:\nIf the sash sensor is reporting a fully open sash position when the sash is actually closed or at low opening, the FHD500 calculates a high face velocity setpoint and commands more exhaust CFM to maintain it. Check: what is the FHD500 showing for sash position? If it shows full open when the sash is at low opening, recalibrate the sash sensor. A stuck or failed sash sensor can cause this.\n\nCHECK 3 — CALIBRATION ERROR IN FLOW COMMAND:\nCheck the ACM flow command setpoint in Flow Manager App or Workbench. If the setpoint at the ACM level shows 400 CFM, the BMS or PBC is commanding 400 CFM — trace back to what is writing that value. If the ACM setpoint correctly shows 200 CFM but 400 CFM is being delivered, the issue is in the valve characterization or a mechanical fault (valve stuck open).\n\nKeywords: override, BACnet, priority, sash, calibration, setpoint, CFM"
+  },
+  {
+    "id": "qa_t2_15percent_low_flow",
+    "topic": "All Niagara 4 flow readings 15% low nothing changed controls side — fan static pressure TAB air balancing mechanical",
+    "category": "Troubleshooting",
+    "tags": [
+      "fan",
+      "static pressure",
+      "TAB",
+      "air balancing",
+      "mechanical",
+      "duct",
+      "filter",
+      "15%",
+      "low flow",
+      "Niagara",
+      "calibration"
+    ],
+    "content": "ALL FLOW READINGS 15% LOW — MECHANICAL CAUSE DIAGNOSIS\n\nIf all flow readings in Niagara 4 dropped 15% and nothing changed on the controls side, the root cause is mechanical — not controls. All flows dropping proportionally together points to a system-wide change in the mechanical system, not individual valve or sensor problems.\n\nCAUSE 1 — FAN PERFORMANCE DEGRADATION:\nThe exhaust or supply fan is delivering less airflow than before. Causes: worn fan belt (slippage), variable frequency drive (VFD) set point changed, fan motor issue, bearing failure, impeller fouling. A fan delivering 15% less pressure means all downstream valves see 15% less static, and even with correct position they deliver 15% less flow.\nCheck: measure fan speed (RPM), verify VFD setpoint, check fan amperage vs nameplate.\n\nCAUSE 2 — REDUCED DUCT STATIC PRESSURE:\nIf duct static pressure at the valve inlets dropped by ~15%, venturi valves will deliver proportionally less flow even at correct position. Duct static can drop from: new duct connection (added branch reducing static to existing valves), new VAV box installed, duct damper partially closed, filter loaded/clogged at air handler.\nCheck: measure static pressure at valve inlets. Compare to commissioning baseline.\n\nCAUSE 3 — CLOGGED FILTERS:\nA heavily loaded air handler filter increases pressure drop, reducing static pressure available at downstream valves.\nCheck: inspect and measure filter differential pressure. Replace filters if loaded.\n\nCAUSE 4 — TAB (TEST AND BALANCE) CHANGE:\nIf the mechanical system was recently rebalanced by a TAB contractor, total system airflow may have been adjusted. Verify with the TAB contractor whether any adjustments were made to the main supply or exhaust systems.\n\nCAUSE 5 — AIR BALANCING DAMPER CHANGE:\nA balancing damper was partially closed during another system modification, reducing airflow to this zone.\n\nKeywords: fan, static pressure, TAB, air balancing, mechanical, duct, filter, calibration"
+  },
+  {
+    "id": "qa_t2_isolation_room_aii_pe",
+    "topic": "Healthcare isolation room commissioning AII PE — positive negative pressure offset alarm monitored",
+    "category": "Commissioning",
+    "tags": [
+      "AII",
+      "PE",
+      "positive",
+      "negative",
+      "pressure",
+      "offset",
+      "alarm",
+      "monitored",
+      "isolation room",
+      "commissioning",
+      "verify"
+    ],
+    "content": "HEALTHCARE ISOLATION ROOM COMMISSIONING — AII AND PE VERIFICATION\n\nAII (AIRBORNE INFECTION ISOLATION) — NEGATIVE PRESSURE:\nAII rooms must maintain continuous negative pressure relative to adjacent spaces. This means exhaust CFM must exceed supply CFM by the design offset.\nVerification procedure:\n1. Measure exhaust CFM and supply CFM. Calculate actual offset: exhaust minus supply = actual offset CFM.\n2. Verify actual offset equals or exceeds design offset.\n3. Verify room pressure differential is negative: use a calibrated differential pressure gauge — room must be negative relative to corridor.\n4. Alarm: verify pressurization alarm activates if room goes positive. AlarmExt on room pressure proxy point, routed to life-safety AlarmService class. Test by momentarily increasing supply — confirm alarm triggers.\n5. Monitored: room pressure must be continuously monitored with HistoryExt trending (1-minute intervals). \"Monitored\" means real-time trending, not just alarming.\n\nPE (PROTECTIVE ENVIRONMENT) — POSITIVE PRESSURE:\nPE rooms maintain positive pressure — supply CFM exceeds exhaust CFM. Immunocompromised patients are protected by outward airflow.\nVerification procedure:\n1. Measure supply CFM and exhaust CFM. Calculate offset: supply minus exhaust = positive offset CFM.\n2. Verify room pressure differential is positive: room positive relative to corridor.\n3. Alarm: verify alarm activates if room goes negative.\n4. Monitored: continuous pressure monitoring required same as AII.\n\nBOTH AII AND PE REQUIREMENTS:\n- Offset must be verified and documented\n- Alarm must be tested and routing confirmed\n- Pressure must be continuously monitored with trending\n- Sign-off requires measured values, witness, and date\n\nKeywords: AII, PE, positive, negative, pressure, offset, alarm, monitored, verify"
+  },
+  {
+    "id": "qa_t2_vision_hood_certification",
+    "topic": "Phoenix Controls Vision Niagara 4 commissioning — proxy point hood certification AlarmService PCI8000",
+    "category": "Commissioning",
+    "tags": [
+      "Vision",
+      "proxy point",
+      "hood certification",
+      "AlarmService",
+      "PCI8000",
+      "BACnet",
+      "ORD",
+      "Room Manager",
+      "commissioning"
+    ],
+    "content": "PHOENIX CONTROLS VISION NIAGARA 4 COMMISSIONING — PROXY POINTS, HOOD CERTIFICATION, ALARMSERVICE\n\nVISION SOFTWARE COMMISSIONING OVERVIEW:\nPhoenix Controls Vision runs on the PCI8000 (Phoenix Controls Integrator) as a Niagara 4 station. Vision provides a dashboarded interface for monitoring and reporting.\n\nPROXY POINTS IN VISION:\nIn Vision/Workbench, create proxy points for each fume hood in each room. Navigate to: Station > Config > Drivers > BacnetNetwork > [PBC device] > point manager. Add proxy points for: exhaust CFM actual, supply CFM actual, face velocity actual, offset actual, alarm states, valve states, occupancy mode. Proxy points created in Workbench appear in Vision dashboards automatically when linked via ORD paths.\n\nHOOD CERTIFICATION IN VISION:\nVision includes a Hood Certification feature for generating compliance documentation. Navigate to the room in the Vision dashboard > Hood Certification section. The system records: face velocity measurement, date/time, sash opening, technician name. Vision generates a certification report for ASHRAE 110 or local code compliance. Hood certification requires accurate face velocity proxy points configured correctly.\n\nALARMSERVICE IN VISION:\nAdd AlarmService to the PCI8000 station. Create alarm classes: LifeSafety, Zone, Communication. Add AlarmExt to all critical proxy points. Route each AlarmService class to recipients (email via SMTP, console). Test each alarm during commissioning. Vision displays active alarms in the dashboard Alarm Console.\n\nCOMPLETE COMMISSIONING SEQUENCE:\n1. Create BACnet proxy points for all hoods in all rooms\n2. Verify proxy points show live data\n3. Configure AlarmService with classes and recipients\n4. Add AlarmExt to critical proxy points\n5. Add HistoryExt to trending points\n6. Link proxy points to Vision dashboards via ORD\n7. Perform hood certification for each fume hood\n8. Document and sign off\n\nKeywords: proxy point, hood certification, AlarmService, Vision, Room Manager, PCI8000, BACnet, ORD"
+  },
+  {
+    "id": "qa_t2_wire_sheet_patterns",
+    "topic": "Niagara 4 wire sheet — Subtract reverse action pressure loop, multiply diversity, humidify dehumidify deadband, Force Read propagate tuning policy",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "Subtract",
+      "reverse",
+      "action",
+      "multiply",
+      "minimum",
+      "kitControl",
+      "humidify",
+      "dehumidify",
+      "deadband",
+      "Force Read",
+      "propagate",
+      "tuning policy",
+      "diversity",
+      "humidity",
+      "pressure"
+    ],
+    "content": "NIAGARA 4 WIRE SHEET PATTERNS — MULTIPLE REQUIRED IMPLEMENTATIONS\n\nPRESSURE CONTROL LOOP — SUBTRACT AND REVERSE ACTION:\n1. Differential pressure transducer proxy point (Fast tuning — life safety)\n2. NumericWritable for pressure setpoint (e.g., -0.03 in. w.c.)\n3. Subtract block: Actual Pressure minus Pressure Setpoint = Pressure Error\n4. LoopPoint PID: Action = REVERSE (when pressure rises above setpoint, output decreases exhaust; when pressure drops below setpoint, output increases exhaust). Reverse action for negative pressure control.\n5. LoopPoint output drives exhaust valve command.\nKeywords: Subtract, reverse, action, LoopPoint, PID, pressure\n\nDIVERSITY CONTROL — MULTIPLY AND MINIMUM:\nDiversity reduces airflow during unoccupied periods while maintaining minimum pressurization.\n1. WeeklySchedule: occupied/unoccupied Boolean output\n2. NumericSwitch: select between 100% multiplier (occupied) and 80% multiplier (unoccupied)\n3. Multiply block: design CFM × multiplier = diversity demand CFM\n4. Max block: compare diversity demand vs minimum offset floor → output is higher of the two. This minimum floor prevents DCV from violating pressurization.\n5. NumericWritable holds minimum required CFM.\nkitControl provides all blocks: NumericSwitch, Multiply, Max, NumericWritable.\nKeywords: multiply, minimum, kitControl, diversity, Max, NumericWritable, WeeklySchedule\n\nHUMIDITY CONTROL — HUMIDIFY/DEHUMIDIFY WITH DEADBAND:\n1. Humidity proxy point from room sensor\n2. Two NumericWritable setpoints: humidify setpoint (e.g., 40% RH) and dehumidify setpoint (e.g., 60% RH)\n3. Deadband between them prevents simultaneous operation (40-60% = neutral zone, neither active)\n4. BooleanWritable for humidify command: true when humidity < humidify setpoint\n5. BooleanWritable for dehumidify command: true when humidity > dehumidify setpoint\n6. Logic ensures both cannot be true simultaneously (And block with Not input)\nkitControl: use LoopPoint or threshold comparisons, deadband prevents simultaneous humidify and dehumidify commands.\nKeywords: humidify, dehumidify, kitControl, deadband, BooleanWritable, NumericWritable\n\nFORCE READ AND NULL PROPAGATION DEBUGGING:\nWhen kitControl outputs are intermittently wrong: (1) add StatusNumeric to each input proxy point, (2) check if status shows stale — stale = null propagates through math blocks, (3) Force Read each input (right-click > Actions > Force Read) — if value updates, tuning policy is too slow, switch to Normal, (4) check tuning policy — if Slow, switch to Normal for actively used points.\nKeywords: Force Read, propagate, tuning policy, StatusNumeric, stale, null"
   }
 ]
