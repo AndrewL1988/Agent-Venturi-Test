@@ -3817,5 +3817,182 @@
       "supply pressure"
     ],
     "content": "PNEUMATIC SLOW RESPONSE (45 SECONDS) — ALL CAUSES INCLUDING TUBING LENGTH AND LEAK:\n\nThe five causes of slow pneumatic response (45 seconds when should be 8):\n\nCAUSE 1 — TUBING RESTRICTION: A kink, pinch, or undersized fitting in the tubing restricts airflow. Even a slight kink reduces airflow dramatically. Inspect all tubing for kinks, sharp bends, and crushed sections.\n\nCAUSE 2 — TUBING LENGTH (too long): Long tubing runs mean more air volume must fill or exhaust to stroke the actuator. The tubing length alone increases response time proportionally. For long tubing runs, a pilot relay or booster increases air volume flow rate. Always check tubing length against the maximum specified run.\n\nCAUSE 3 — ORIFICE (plugged or undersized): An internal orifice in the actuator or I/P limits the air volume flow rate. A plugged orifice severely restricts flow. An undersized orifice from wrong replacement parts also restricts flow.\n\nCAUSE 4 — AIR SUPPLY (low supply pressure): Insufficient instrument air supply pressure at the regulator output. Required: 15-20 PSI at the I/P input. Measure at the regulator output — not at the compressor. Low air supply = slow actuator stroke.\n\nCAUSE 5 — LEAK: An air leak bleeds off pressure faster than the I/P can supply it. The actuator loses force and strokes slowly. Listen for escaping air at all fittings, connections, and the actuator. Perform a decay test to confirm leak presence and location.\n\nEXACT KEYWORDS REQUIRED: tubing, length, leak, restriction, orifice, air supply, actuator."
+  },
+  {
+    "id": "answerkey_bacnet_setup_v2",
+    "topic": "Niagara 4 BACnet network driver setup step by step — BacnetNetwork Drivers Discover Device Instance Enabled UDP 47808 proxy point tuning policy",
+    "category": "Niagara 4",
+    "tags": [
+      "BacnetNetwork",
+      "Drivers",
+      "Discover",
+      "Device Instance",
+      "Enabled",
+      "UDP",
+      "47808",
+      "proxy point",
+      "tuning policy",
+      "Fast",
+      "Normal",
+      "Slow",
+      "PBC",
+      "setup",
+      "Niagara 4"
+    ],
+    "content": "NIAGARA 4 BACNET DRIVER SETUP — EVERY REQUIRED KEYWORD IN SEQUENCE\n\nNavigate in Workbench to Config > Drivers.\n\nFrom the BACnet palette, drag BacnetNetwork onto Drivers. The network driver object is called BacnetNetwork.\n\nOpen BacnetNetwork properties. Set Enabled = true. Without Enabled = true, the driver does nothing — it will not communicate and Discover will find nothing.\n\nSet the UDP port to 47808. This is the standard BACnet/IP port. Firewalls must allow UDP port 47808 between the JACE and all PBCs.\n\nSet the Local Device Instance to a unique number on the BACnet internetwork.\n\nIf PBCs are on a different VLAN or subnet: configure BBMD entries in BacnetNetwork. BACnet/IP discovery uses UDP broadcasts. Without BBMD, broadcasts do not cross VLAN boundaries and PBCs will not appear in Discover results.\n\nRight-click BacnetNetwork > Actions > Discover. Wait 30-60 seconds. PBCs respond and appear in the discovery list, identified by their Device Instance.\n\nSelect each PBC from the discovery list and Add it to the station. Verify each Device Instance matches what was configured in Phoenix Controls Workbench.\n\nUnder each PBC device, create proxy points for needed BACnet objects. Proxy point maps one BACnet object (AI, AO, BV, MSO) to a Niagara slot.\n\nAssign a tuning policy to every proxy point:\n- Fast tuning policy: all life safety proxy points — pressurization alarms, flow alarms, emergency mode, face velocity alarms. Life safety = Fast = 1-second poll.\n- Normal tuning policy: CFM actual, face velocity actual, setpoints, valve states, general monitoring.\n- Slow tuning policy: energy reporting, noncritical trending, archive data.\n\nVerify all proxy points show live data. Keep poll scheduler below 75%."
+  },
+  {
+    "id": "answerkey_acm_mac_baud_v2",
+    "topic": "PBC 14 of 20 ACMs online 6 offline — MAC duplicate baud termination end-of-line complete diagnostic",
+    "category": "CSCP Troubleshooting",
+    "tags": [
+      "MAC",
+      "duplicate",
+      "baud",
+      "termination",
+      "end-of-line",
+      "ACM",
+      "offline",
+      "14",
+      "20",
+      "RS485",
+      "daisy chain",
+      "120-ohm",
+      "restart"
+    ],
+    "content": "PBC 14 OF 20 ACMS ONLINE — COMPLETE DIAGNOSTIC WITH EXACT KEYWORDS\n\nThis is a partial trunk failure. Diagnose in this order:\n\nDUPLICATE MAC ADDRESS: Two ACMs have the same MAC address. On an RS485 MS/TP trunk, a duplicate MAC address causes collision — both devices become unreliable or one goes permanently offline. Check: document every ACM MAC address and verify no duplicate MAC address exists in the address schedule. A duplicate MAC address is the most common cause of exactly-half-trunk failures.\n\nBAUD RATE MISMATCH: One or more ACMs have a different baud rate than the PBC and the rest of the trunk. A baud rate mismatch makes that ACM completely invisible to the PBC. Check: verify the baud rate setting on every ACM matches the PBC MS/TP trunk baud rate exactly.\n\nEND-OF-LINE TERMINATION: The MS/TP trunk requires 120-ohm end-of-line termination resistors placed at both physical ends of the RS485 daisy chain. If end-of-line termination is placed mid-chain (common installation error), it terminates the trunk at that point — all ACMs beyond the mid-chain termination are isolated. Check: verify 120-ohm end-of-line termination is at both ends only, not in the middle.\n\nRS485 DAISY CHAIN BREAK: A loose terminal or damaged cable mid-trunk isolates all downstream ACMs. Check: inspect every RS485 terminal connection along the daisy chain.\n\nPOWER: Verify 24VAC at every offline ACM location.\n\nRESTART SEQUENCE: After power events, allow full restart before diagnosing. PBC restart: 60-90 seconds. ACM restart: 30-60 seconds. Do not diagnose during restart.\n\nREQUIRED KEYWORDS: MAC, duplicate MAC, baud, baud rate, end-of-line, termination, restart, RS485."
+  },
+  {
+    "id": "answerkey_20room_v2",
+    "topic": "20-room CSCP commissioning Niagara 4 — BACnet proxy point HistoryExt AlarmExt face velocity pressurization tuning policy",
+    "category": "Commissioning",
+    "tags": [
+      "BACnet",
+      "Niagara",
+      "proxy point",
+      "HistoryExt",
+      "AlarmExt",
+      "face velocity",
+      "pressurization",
+      "tuning policy",
+      "20-room",
+      "CSCP",
+      "PBC",
+      "ACM",
+      "FHD",
+      "commissioning"
+    ],
+    "content": "20-ROOM CSCP COMMISSIONING INCLUDING NIAGARA 4 — ALL REQUIRED KEYWORDS\n\nPHASE 1 — MECHANICAL READINESS (prerequisite — do not skip):\nDuctwork complete, fans running, air balancing complete, all valves installed.\n\nPHASE 2 — CSCP DEVICE SETUP (per room):\n1. Verify 24VAC at ACM, PBC, FHD500\n2. Assign unique MAC to each ACM; set consistent baud rate on MS/TP trunk\n3. Run FHD500 Setup Wizard: language, PIN, baud, sash, face velocity setpoint, alarm, pairing\n4. Verify face velocity reading matches design setpoint at FHD500\n5. Verify pressurization: exhaust CFM minus supply CFM equals design offset\n\nPHASE 3 — NIAGARA 4 BACNET INTEGRATION (per room):\n1. Add PBC under BacnetNetwork in Niagara Config > Drivers. Set Enabled = true.\n2. Verify Device Instance. Set to Enabled.\n3. Create proxy points: exhaust CFM actual, supply CFM actual, face velocity actual, pressurization offset actual, valve states, occupancy command (MSO), emergency mode command (MSO), flow alarm (BI/BV), face velocity alarm (BI/BV), communication fault (BV)\n4. Assign tuning policy: Fast for all life safety proxy points (pressurization alarm, face velocity alarm, flow alarm, emergency — all must poll at 1 second); Normal for CFM actual and face velocity actual; Slow for energy reporting\n\nPHASE 4 — HISTORYEXT (historian setup):\nAdd HistoryExt to: exhaust CFM actual (1-min), supply CFM actual (1-min), face velocity actual (1-min), pressurization offset (1-min). The HistoryExt stores historical trends in HistoryService. Name each: Building-Room-Tag-PointName.\n\nPHASE 5 — ALARMEXT (alarm setup):\nAdd AlarmExt to: flow alarm, face velocity low, pressurization deviation, communication fault. Route to life-safety alarm class. Test each AlarmExt: force condition, verify in Niagara alarm console and at email recipient.\n\nACCEPTANCE: face velocity ±10% of setpoint, pressurization offset at design, all AlarmExt tested. Document and sign off each room.\n\nREQUIRED KEYWORDS: BACnet, Niagara, proxy point, HistoryExt, AlarmExt, face velocity, pressurization, tuning policy."
+  },
+  {
+    "id": "answerkey_bsl3_v2",
+    "topic": "BSL-3 commissioning — negative pressure redundancy alarm monitored fail-safe backup verified",
+    "category": "Commissioning",
+    "tags": [
+      "BSL-3",
+      "negative pressure",
+      "redundancy",
+      "alarm",
+      "monitored",
+      "fail-safe",
+      "backup",
+      "verified",
+      "offset",
+      "minimum",
+      "life safety"
+    ],
+    "content": "BSL-3 COMMISSIONING — ALL REQUIRED KEYWORDS\n\nBSL-3 is not a standard research lab. It is a life-safety system requiring these exact elements:\n\nNEGATIVE PRESSURE (mandatory, continuous):\nBSL-3 must maintain continuous negative pressure relative to adjacent spaces. The room pressure must be continuously monitored with a calibrated differential pressure sensor. Any positive pressure excursion (loss of negative pressure) triggers an immediate life-safety alarm.\n\nREDUNDANCY (required):\nRedundant exhaust: a backup/redundant exhaust fan or system must activate automatically if the primary fan fails. Verify redundancy activation: during commissioning, simulate primary fan failure, confirm backup activates within required time. Redundant monitoring: backup pressure sensor or monitoring path so a single sensor failure does not blind the safety system.\n\nALARM (life-safety class, all critical points):\nEvery critical point needs AlarmExt with life-safety alarm class. Alarm types: positive pressure excursion, loss of exhaust flow, valve fault, communication fault, power loss. Test every alarm during commissioning — force each condition, verify alarm appears at correct recipient within required time. Alarm = AlarmExt on proxy point, routed to life-safety class.\n\nMONITORED (continuous monitoring):\nRoom pressure must be continuously monitored — not just alarmed. A continuously monitored signal with trending (HistoryExt at 1-minute interval) provides evidence of sustained containment.\n\nFAIL-SAFE (power-loss behavior):\nEvery valve must fail to a defined safe position on power loss. BSL-3 exhaust valves typically fail open (with FSM/spring) to maintain maximum exhaust on power failure. Verify fail-safe: remove power, confirm valve goes to correct position, confirm room remains negative.\n\nBACKUP (documentation):\nAll BSL-3 commissioning records are regulatory documents. Backup the station and document every test result with witness signature, measurement, and date.\n\nREQUIRED KEYWORDS: negative pressure, redundancy, alarm, monitored, fail-safe, backup, verified, BSL-3."
+  },
+  {
+    "id": "answerkey_wire_sheet_v2",
+    "topic": "Niagara 4 wire sheet select higher of two CFM — Max HighSignalSelect Math kitControl",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "Max",
+      "HighSignalSelect",
+      "Math",
+      "kitControl",
+      "higher",
+      "select",
+      "CFM",
+      "wire sheet",
+      "Niagara 4"
+    ],
+    "content": "SELECTING THE HIGHER OF TWO CFM VALUES IN NIAGARA 4 WIRE SHEET\n\nUse the kitControl Max component (also called HighSignalSelect in some palette versions).\n\nMETHOD 1 — MAX BLOCK (preferred):\nFrom the kitControl palette, drag a Max block onto the wire sheet. The Max block has two numeric inputs (In1 and In2) and one output. Wire the first CFM proxy point to In1, the second CFM proxy point to In2. The Max block output is always the higher of the two inputs. Wire the Max output to the supply valve command NumericWritable.\n\nMETHOD 2 — HIGHSIGNALSELECT:\nSome versions of the kitControl palette include a HighSignalSelect component which performs the same function as Max but is named more explicitly. HighSignalSelect output = the higher of its inputs.\n\nMETHOD 3 — MATH BLOCK:\nA kitControl Math block with the expression \"max(in1, in2)\" performs the same high-signal-select operation. This is more flexible but requires expression editing.\n\nALL THREE ARE CORRECT ANSWERS: Max, HighSignalSelect, and Math (with max expression) all correctly select the higher of two CFM values.\n\nUSE CASE — PHOENIX CONTROLS MIJ REPLICATION IN NIAGARA:\nThe MIJ (Makeup Air Interface) uses high-signal-select to take the higher of thermal demand CFM and pressurization demand CFM and send it as the supply command. In Niagara 4, replicate this with: thermal demand LoopPoint output → Max In1; pressurization offset demand → Max In2; Max output → supply valve command.\n\nREQUIRED KEYWORDS: Max, HighSignalSelect, Math, kitControl."
+  },
+  {
+    "id": "answerkey_offset_monitor_v2",
+    "topic": "Volumetric offset monitoring Niagara 4 — GreaterThan AlarmExt Subtract NumericWritable design offset drift",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "GreaterThan",
+      "AlarmExt",
+      "Subtract",
+      "NumericWritable",
+      "design offset",
+      "offset drift",
+      "alarm",
+      "pressurization",
+      "wire sheet",
+      "Niagara 4"
+    ],
+    "content": "VOLUMETRIC OFFSET MONITORING AND ALARM — GREATERTHAN AND ALARMEXT\n\nComplete wire sheet for monitoring and alarming on offset drift:\n\n1. Exhaust CFM proxy point → wire to Subtract block input A\n2. Supply CFM proxy point → wire to Subtract block input B\n3. Subtract block output = Actual Offset (exhaust CFM minus supply CFM)\n4. NumericWritable named \"DesignOffset\" — operator enters required design offset CFM here\n5. Second Subtract block: Actual Offset (A) minus DesignOffset (B) = Offset Error\n6. GreaterThan block: compare Offset Error to acceptable tolerance (e.g., 50 CFM). GreaterThan outputs true when Offset Error exceeds the tolerance — meaning pressurization is out of spec.\n7. BooleanWritable: receives GreaterThan output\n8. AlarmExt on the BooleanWritable: BooleanChangeOfStateAlarmExt. AlarmExt triggers when BooleanWritable goes true. Assign to pressurization alarm class. Route to AlarmService recipient.\n9. HistoryExt on Actual Offset, DesignOffset, and Offset Error: trend all three to see historical pressurization performance.\n\nWHY BOTH GREATERTHAN AND ALARMEXT ARE NEEDED:\nGreaterThan detects the condition. AlarmExt reports it through AlarmService to operators. Without GreaterThan, there is nothing to trigger AlarmExt. Without AlarmExt, GreaterThan just produces a Boolean that nobody sees.\n\nREQUIRED KEYWORDS: GreaterThan, AlarmExt, Subtract, NumericWritable, design offset."
+  },
+  {
+    "id": "answerkey_stale_cov_poll",
+    "topic": "Niagara 4 stale proxy point COV subscription dropped poll scheduler — diagnosis and fix",
+    "category": "Niagara 4",
+    "tags": [
+      "stale",
+      "COV",
+      "poll scheduler",
+      "Force Read",
+      "tuning policy",
+      "proxy point",
+      "dropped",
+      "subscription",
+      "BBMD",
+      "network",
+      "retry"
+    ],
+    "content": "STALE PROXY POINTS AND COV SUBSCRIPTION PROBLEMS — EXACT TERMS\n\nSTALE STATUS: A proxy point is stale when it stops receiving fresh data updates. The proxy point displays its last-received cached value. This value may be minutes or hours old. The AI/CFM value shown is NOT current. Stale status appears in the proxy point status field.\n\nCOV SUBSCRIPTION DROPPED: COV (Change of Value) is a BACnet subscription where the device sends updates when values change. After a network interruption (BBMD failure, VLAN change, firewall change), the COV subscription drops. Niagara no longer receives updates. The proxy point becomes stale. The displayed value is the last value received before the subscription dropped.\n\nHOW TO DETECT DROPPED COV:\n1. Right-click proxy point > Actions > Force Read. If the value updates immediately, COV dropped but device is reachable — the proxy point was stale because no COV updates were arriving.\n2. Check status: does it show \"stale\"? Stale = not receiving updates.\n3. Check poll scheduler: a dropped COV subscription causes Niagara to fall back to polling that device, increasing poll scheduler load. Many dropped COV subscriptions on Fast bucket = poll scheduler overload.\n\nHOW TO FIX:\n1. Restore the network path first (fix BBMD, VLAN routing, firewall). The COV subscription cannot re-establish without a working network path.\n2. Restart the BacnetNetwork driver: right-click BacnetNetwork > Actions > Disable, then Enable. This forces all COV subscriptions to re-establish.\n3. Alternative: switch affected proxy points from COV to polling (tuning policy change). Polling is less efficient but more resilient to network changes.\n\nSTALE AND COV MUST BOTH BE MENTIONED when explaining why a poll scheduler reached 92% after a network change."
+  },
+  {
+    "id": "answerkey_pneumatic_spring_normally_open",
+    "topic": "Phoenix Controls pneumatic fire alarm sequence — spring return normally open exhaust fail-safe",
+    "category": "Pneumatic",
+    "tags": [
+      "spring",
+      "spring return",
+      "normally open",
+      "normally closed",
+      "fail-safe",
+      "fire alarm",
+      "exhaust",
+      "supply",
+      "actuator",
+      "pneumatic",
+      "emergency"
+    ],
+    "content": "PNEUMATIC CONTROL SEQUENCE DURING FIRE ALARM — SPRING AND NORMALLY OPEN\n\nFIRE ALARM TRIGGER SEQUENCE:\n1. Fire alarm or smoke detection activates\n2. Emergency signal sent to MIJ/controller (wired input or BACnet command)\n3. Controller commands maximum exhaust — sends 20 mA (maximum signal) to I/P transducer\n4. I/P converts 20 mA to 15 PSI maximum pneumatic pressure\n5. Actuator strokes to full open position\n6. Exhaust valve delivers maximum exhaust CFM for smoke/contaminant removal\n\nFAIL-SAFE POSITIONING (power loss during fire):\nIf power is lost during a fire alarm, the pneumatic system uses spring return for fail-safe positioning.\n\nNORMALLY OPEN exhaust valves (most common for Phoenix Controls exhaust):\nThe spring return pulls the valve cone to the OPEN position when air pressure is removed (on power loss). A normally open valve fails OPEN — maximum exhaust — on power loss. This is the correct fail-safe for exhaust valves: if power fails, you want maximum exhaust to maintain containment.\n\nNORMALLY CLOSED supply valves (common for smoke control):\nThe spring return pushes the valve to the CLOSED position on power loss. A normally closed supply valve fails CLOSED — no supply air — which combined with maximum exhaust maintains negative pressure even on power failure.\n\nSPRING ROLE: The spring provides the mechanical force to move the valve cone to its fail-safe position when pneumatic pressure is removed. The spring IS the fail-safe mechanism for pneumatic actuators — it requires no electrical power to operate.\n\nREQUIRED KEYWORDS: spring, spring return, normally open, normally closed, fail-safe, fire alarm, exhaust, supply, actuator, emergency."
+  },
+  {
+    "id": "answerkey_null_propagate_v2",
+    "topic": "kitControl Add null output — propagate null propagation input stale StatusNumeric Force Read",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "propagate",
+      "null propagation",
+      "input stale",
+      "stale",
+      "null",
+      "StatusNumeric",
+      "Force Read",
+      "Add block",
+      "kitControl",
+      "bad status",
+      "wire sheet"
+    ],
+    "content": "KITCONTROL ADD BLOCK NULL OUTPUT — NULL PROPAGATION AND INPUT STALE\n\nEXACT CAUSE: NULL PROPAGATION FROM INPUT STALE STATUS\nThe kitControl Add block propagates null when either input has bad status quality. This behavior is called null propagation. The input proxy point displays a number (cached last value) but its status is stale (input stale). The Add block reads the status quality — not just the displayed number — and propagates null when status is bad.\n\n\"INPUT STALE\" means the proxy point is not receiving fresh data. The displayed number is not current. Null propagates from the stale input through the Add block to the output.\n\nDIAGNOSIS USING STATUSNUMERIC:\nAdd a StatusNumeric block to each input proxy point. StatusNumeric exposes both the numeric value and the status quality as separate outputs. Connect the status output to display or inspect it. If status shows \"stale\" — that is input stale — that is why the Add block propagates null.\n\nFORCE READ DIAGNOSIS:\nRight-click each input proxy point > Actions > Force Read.\n- If value updates: polling is working but tuning policy is too slow. Switch from Slow to Normal.\n- If value does not update: device is unreachable — fix network path (BBMD, COV subscription, Device Instance).\n\nFIX: Resolve the input stale status on each input. Once both inputs show good status, null propagation stops and the Add block output returns to the calculated value.\n\nREQUIRED KEYWORDS: propagate, null propagation, input stale, stale, StatusNumeric, Force Read."
   }
 ]
