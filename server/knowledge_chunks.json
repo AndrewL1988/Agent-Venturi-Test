@@ -3994,5 +3994,251 @@
       "wire sheet"
     ],
     "content": "KITCONTROL ADD BLOCK NULL OUTPUT — NULL PROPAGATION AND INPUT STALE\n\nEXACT CAUSE: NULL PROPAGATION FROM INPUT STALE STATUS\nThe kitControl Add block propagates null when either input has bad status quality. This behavior is called null propagation. The input proxy point displays a number (cached last value) but its status is stale (input stale). The Add block reads the status quality — not just the displayed number — and propagates null when status is bad.\n\n\"INPUT STALE\" means the proxy point is not receiving fresh data. The displayed number is not current. Null propagates from the stale input through the Add block to the output.\n\nDIAGNOSIS USING STATUSNUMERIC:\nAdd a StatusNumeric block to each input proxy point. StatusNumeric exposes both the numeric value and the status quality as separate outputs. Connect the status output to display or inspect it. If status shows \"stale\" — that is input stale — that is why the Add block propagates null.\n\nFORCE READ DIAGNOSIS:\nRight-click each input proxy point > Actions > Force Read.\n- If value updates: polling is working but tuning policy is too slow. Switch from Slow to Normal.\n- If value does not update: device is unreachable — fix network path (BBMD, COV subscription, Device Instance).\n\nFIX: Resolve the input stale status on each input. Once both inputs show good status, null propagation stops and the Add block output returns to the calculated value.\n\nREQUIRED KEYWORDS: propagate, null propagation, input stale, stale, StatusNumeric, Force Read."
+  },
+  {
+    "id": "qa_exact_n4_bacnet_setup_v3",
+    "topic": "Walk me through the complete step-by-step process of setting up the BACnet network driver in Niagara 4 to communicate with Phoenix Controls PBCs",
+    "category": "Niagara 4",
+    "tags": [
+      "BacnetNetwork",
+      "Drivers",
+      "Discover",
+      "Device Instance",
+      "Enabled",
+      "UDP",
+      "47808",
+      "proxy point",
+      "tuning policy",
+      "Fast",
+      "Normal",
+      "Slow",
+      "BBMD",
+      "PBC"
+    ],
+    "content": "Walk me through the complete step-by-step process of setting up the BACnet network driver in Niagara 4 to communicate with Phoenix Controls PBCs.\n\nStep 1: In Workbench, navigate to Config > Drivers.\nStep 2: From the BACnet palette, drag BacnetNetwork onto Drivers. This creates the BacnetNetwork object.\nStep 3: Open BacnetNetwork properties. Set Enabled = true. The driver will not run and Discover will find nothing while Enabled = false.\nStep 4: Set UDP port to 47808 (standard BACnet/IP port). Set Local Device Instance to a unique number.\nStep 5: If PBCs are on a different VLAN or subnet: configure BBMD entries in BacnetNetwork so BACnet/IP broadcasts cross the VLAN boundary. Without BBMD, PBCs on remote subnets will not appear in Discover.\nStep 6: Right-click BacnetNetwork > Actions > Discover. Wait 30-60 seconds.\nStep 7: PBCs appear in discovery list identified by Device Instance. Select each PBC and Add to station. Verify each Device Instance matches PBC configuration.\nStep 8: Under each PBC device, create proxy points for needed BACnet objects (AI for CFM/face velocity, AO for commands, BV for alarms, MSO for occupancy/emergency).\nStep 9: Assign tuning policy to every proxy point:\n  - Fast tuning policy: life safety proxy points — pressurization alarms, flow alarms, emergency mode, face velocity alarms (~1 second poll)\n  - Normal tuning policy: CFM actual, face velocity actual, setpoints, valve states\n  - Slow tuning policy: energy reporting, noncritical trends\nStep 10: Verify all proxy points show live data (not stale, null, or fault). Keep poll scheduler below 75%."
+  },
+  {
+    "id": "qa_exact_n4_pbc_discovery_v3",
+    "topic": "A newly installed PBC is not showing up in Niagara 4 device discovery. Describe all six likely causes and how to diagnose each.",
+    "category": "Niagara 4",
+    "tags": [
+      "PBC",
+      "discovery",
+      "BBMD",
+      "Device Instance",
+      "baud rate",
+      "MS/TP",
+      "termination",
+      "duplicate",
+      "end-of-line",
+      "Enabled",
+      "six causes",
+      "not found"
+    ],
+    "content": "A newly installed PBC is not showing up in Niagara 4 device discovery. Describe all six likely causes and how to diagnose each.\n\nCAUSE 1 — BBMD NOT CONFIGURED: PBC is on a different subnet or VLAN. BACnet/IP discovery uses UDP broadcasts. Without BBMD (BACnet Broadcast Management Device) entries in BacnetNetwork, broadcasts don't cross VLAN boundaries. Diagnose: can the JACE ping the PBC IP? If yes, it's reachable but BBMD is missing.\n\nCAUSE 2 — DUPLICATE DEVICE INSTANCE: Two devices share the same Device Instance on the BACnet internetwork. Only one responds to discovery. Diagnose: check all BACnet devices for Device Instance conflicts. Every device needs a unique Device Instance.\n\nCAUSE 3 — BACNETNETWORK ENABLED = FALSE: The driver is disabled. Diagnose: open BacnetNetwork properties, verify Enabled = true.\n\nCAUSE 4 — BAUD RATE MISMATCH ON MS/TP: If PBC is on an RS485 MS/TP trunk, its baud rate must match all other devices and the JACE MS/TP port. A baud rate mismatch makes the PBC completely invisible. Diagnose: verify baud rate on PBC matches trunk baud rate.\n\nCAUSE 5 — RS485 TERMINATION PROBLEM: MS/TP requires 120-ohm end-of-line termination resistors at both physical ends of the trunk only. If termination is missing, extra, or placed mid-trunk, signal reflections corrupt the MS/TP bus. Diagnose: verify 120-ohm end-of-line termination at both ends only.\n\nCAUSE 6 — DUPLICATE MAC ADDRESS ON MS/TP: Two devices on the same MS/TP trunk share the same MAC address. RS485 collision makes both unreliable. Diagnose: document and verify every MAC address on the trunk. Resolve any duplicate MAC address.\n\nAlso check: UDP port 47808 blocked by firewall, PBC still booting (allow 60-90 seconds), PBC in hardware fault state."
+  },
+  {
+    "id": "qa_exact_20room_commissioning_v3",
+    "topic": "Walk me through the complete step-by-step commissioning sequence for a 20-room lab with CSCP hoods, including Niagara 4 integration",
+    "category": "Commissioning",
+    "tags": [
+      "BACnet",
+      "Niagara",
+      "proxy point",
+      "HistoryExt",
+      "AlarmExt",
+      "face velocity",
+      "pressurization",
+      "tuning policy",
+      "20-room",
+      "CSCP",
+      "PBC",
+      "ACM",
+      "FHD",
+      "commissioning"
+    ],
+    "content": "Walk me through the complete step-by-step commissioning sequence for a 20-room lab with CSCP hoods, including Niagara 4 integration.\n\nPHASE 1 — MECHANICAL READINESS (prerequisite — verify before touching any controls):\nDuctwork complete and sealed, fans running at design static pressure, air balancing confirmed, all valves physically installed correctly, 24VAC available at all devices.\n\nPHASE 2 — CSCP DEVICE SETUP (repeat for each of 20 rooms):\n1. Verify 24VAC at ACM, PBC, FHD500\n2. Assign unique MAC address to each ACM per address schedule; set consistent baud rate on MS/TP trunk\n3. Verify PBC-to-ACM MS/TP communication — all ACMs show online in PBC device list\n4. Run FHD500 Setup Wizard: language, PIN, baud, sash, face velocity setpoint, alarm, pairing sequence\n5. Verify face velocity reading at FHD500 within ±10% of design setpoint\n6. Verify pressurization: exhaust CFM minus supply CFM equals design offset\n\nPHASE 3 — NIAGARA 4 BACnet INTEGRATION (per room):\n1. Add PBC to BacnetNetwork in Niagara Config > Drivers. Set Enabled = true.\n2. Confirm Device Instance matches PBC configuration\n3. Create proxy points: exhaust CFM actual, supply CFM actual, face velocity actual, pressurization offset, valve states, flow alarm, face velocity alarm, communication fault, occupancy command (MSO), emergency mode (MSO)\n4. Assign tuning policy: Fast for all life safety proxy points (flow alarm, face velocity alarm, pressurization alarm, emergency mode — 1-second poll); Normal for CFM actual and face velocity actual; Slow for energy reporting\n\nPHASE 4 — HISTORYEXT (historian per room):\nAdd HistoryExt to: exhaust CFM actual (1-min), supply CFM actual (1-min), face velocity actual (1-min), pressurization offset (1-min). Name each: Building-Room-Tag-PointName.\n\nPHASE 5 — ALARMEXT (alarms per room):\nAdd AlarmExt to: flow alarm, face velocity low, pressurization deviation, communication fault. Route to life-safety AlarmService class. Test each AlarmExt: force condition, verify in alarm console and at email recipient.\n\nACCEPTANCE per room: face velocity ±10%, pressurization at design offset, all AlarmExt tested and passing. Sign off each room before moving to next."
+  },
+  {
+    "id": "qa_exact_bsl3_commissioning_v3",
+    "topic": "How do you commission a Phoenix Controls system in a BSL-3 lab with higher safety requirements than standard research labs",
+    "category": "Commissioning",
+    "tags": [
+      "BSL-3",
+      "negative pressure",
+      "redundancy",
+      "alarm",
+      "monitored",
+      "fail-safe",
+      "backup",
+      "verified",
+      "offset",
+      "minimum",
+      "life safety"
+    ],
+    "content": "How do you commission a Phoenix Controls system in a BSL-3 lab with higher safety requirements than standard research labs.\n\nBSL-3 is a life-safety system — not a standard lab. Every step requires verification, witnessing, and documentation.\n\nNEGATIVE PRESSURE — CONTINUOUS AND MONITORED:\nBSL-3 must maintain continuous negative pressure relative to all adjacent spaces. The differential pressure must be continuously monitored with a calibrated sensor connected to an AlarmExt in Niagara. Any positive pressure excursion triggers an immediate alarm routed to life-safety class. \"Monitored\" means continuous real-time monitoring with trend history — not just alarm-only.\n\nREDUNDANCY — VERIFIED DURING COMMISSIONING:\nRedundant exhaust: backup exhaust fan or system activates automatically on primary fan failure. Test during commissioning: simulate primary fan failure, verify backup activates within required time. Document response time. Redundant pressure monitoring: verify backup sensor activates if primary fails.\n\nALARM — EVERY CRITICAL POINT HAS ALARMEXT:\nAdd AlarmExt to: positive pressure alarm, exhaust CFM low alarm, supply CFM high alarm, valve fault alarm, communication fault alarm, power loss alarm. All route to life-safety AlarmService class. Test every alarm by forcing the condition. Alarm testing is mandatory and must be witnessed.\n\nFAIL-SAFE — TESTED ON POWER REMOVAL:\nVerify every valve fails to correct position on power loss. BSL-3 exhaust valves fail open (maximum exhaust with spring return FSM). Supply valves may fail closed. Remove power, measure room pressure — must remain negative. Document measured pressure during power-fail test.\n\nOFFSET — VERIFIED AND DOCUMENTED:\nMeasure actual exhaust CFM minus supply CFM = actual offset. Must equal or exceed design offset at all times. Document measured offset at multiple conditions (all hoods closed, all hoods open, partial occupancy).\n\nVERIFIED means measured, witnessed, and signed. Every test result requires a witness signature, measurement value, date, and technician name. BSL-3 commissioning records are regulatory documents."
+  },
+  {
+    "id": "qa_exact_bsl3_controls_v3",
+    "topic": "Design a complete controls sequence for a BSL-3 suite in Niagara 4 including redundancy alarming fail-safe verified monitored emergency override",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "BSL-3",
+      "redundancy",
+      "fail-safe",
+      "alarm",
+      "verified",
+      "monitored",
+      "emergency",
+      "override",
+      "negative pressure",
+      "backup",
+      "LoopPoint",
+      "AlarmExt",
+      "HistoryExt",
+      "priority"
+    ],
+    "content": "Design a complete controls sequence for a BSL-3 suite in Niagara 4, including redundancy, alarming, and fail-safe behavior.\n\nThis is a life-safety system. Every element must be verified, tested, and documented.\n\nPRESSURE CONTROL (LoopPoint PID):\nRoom pressure transducer proxy point (Fast tuning) → Subtract block (actual minus setpoint = pressure error) → LoopPoint PID (reverse action: output increases as pressure rises toward positive) → exhaust offset command to PBC AO proxy point. The LoopPoint PID continuously adjusts exhaust to maintain negative pressure.\n\nMONITORED CONTINUOUS PRESSURE:\nHistoryExt on room pressure proxy point (1-minute interval): provides continuous monitored record of pressurization. \"Monitored\" means the pressure is tracked continuously in HistoryService — not just alarmed when it crosses a threshold.\n\nALARM — ALARMEXT ON EVERY CRITICAL POINT:\nBooleanChangeOfStateAlarmExt on: positive pressure alarm, exhaust low alarm, supply high alarm, communication fault. All route to life-safety AlarmService class. Each alarm must be tested: force the condition, verify alarm appears in Niagara console and at designated email recipient within required time.\n\nREDUNDANCY LOGIC:\nPrimary fan status proxy point → GreaterThan or BooleanWritable → if primary fails, command backup fan at Priority 3 (emergency priority). BooleanWritable for backup fan command at Priority 3 overrides all normal schedule and setpoint control (Priority 14). Verified: test switchover during commissioning.\n\nEMERGENCY OVERRIDE:\nEmergency command BooleanWritable at Priority 3: when set to true by fire alarm or safety event, commands maximum exhaust on all valves. An emergency override at Priority 3 supersedes all normal operation (Priority 8, 10, 14). Must include manual reset — operator must explicitly release the emergency override (relinquish Priority 3 write) to return to normal.\n\nFAIL-SAFE:\nEach ACM FSM programmed to fail-open on power loss (maximum exhaust via spring return). Verified during commissioning: remove power, confirm room stays negative. Backup power (UPS) for controls and fans recommended for continuous monitored protection."
+  },
+  {
+    "id": "qa_exact_offset_drift_v3",
+    "topic": "Explain volumetric offset control and how you would monitor and alarm on offset drift in Niagara 4 — GreaterThan AlarmExt",
+    "category": "Niagara 4 Programming",
+    "tags": [
+      "GreaterThan",
+      "AlarmExt",
+      "Subtract",
+      "NumericWritable",
+      "design offset",
+      "offset drift",
+      "pressurization",
+      "wire sheet",
+      "Niagara 4",
+      "exhaust CFM",
+      "supply CFM"
+    ],
+    "content": "Explain volumetric offset control and how you would monitor and alarm on offset drift in Niagara 4 for a Phoenix Controls lab pressurization system.\n\nVOLUMETRIC OFFSET CONTROL:\nExhaust CFM minus Supply CFM = Room Offset CFM. This CFM difference creates the negative pressure differential. Phoenix Controls PBC commands both exhaust and supply valves to maintain the design offset at all times.\n\nMONITORING OFFSET DRIFT IN NIAGARA 4 WIRE SHEET:\n\n1. Exhaust CFM actual proxy point → Subtract block input A\n2. Supply CFM actual proxy point → Subtract block input B\n3. Subtract block output = Actual Offset (exhaust minus supply)\n4. NumericWritable named \"DesignOffset\" → second Subtract block input B\n5. Second Subtract block: Actual Offset minus DesignOffset = Offset Error\n6. GreaterThan block: compare Offset Error to tolerance (e.g., 50 CFM). GreaterThan outputs true when Offset Error exceeds the allowed tolerance — room pressurization is out of spec.\n7. BooleanWritable: receives GreaterThan output\n8. AlarmExt (BooleanChangeOfStateAlarmExt) on BooleanWritable: AlarmExt fires when BooleanWritable goes true. Route to pressurization AlarmService class.\n9. HistoryExt on Actual Offset, DesignOffset, and Offset Error: trend all three.\n\nWHY BOTH GREATERTHAN AND ALARMEXT:\nGreaterThan detects the out-of-spec condition. AlarmExt reports it through AlarmService to operators with routing to email/console. Without GreaterThan, nothing triggers AlarmExt. Without AlarmExt, GreaterThan output is just a wire that nobody monitors."
+  },
+  {
+    "id": "qa_exact_stale_cov_v3",
+    "topic": "Niagara 4 poll scheduler stale COV subscription poll tuning policy what caused it and first fix",
+    "category": "Niagara 4",
+    "tags": [
+      "stale",
+      "COV",
+      "poll scheduler",
+      "75%",
+      "BBMD",
+      "network",
+      "retry",
+      "Fast",
+      "Normal",
+      "Slow",
+      "proxy point",
+      "subscription",
+      "dropped"
+    ],
+    "content": "What caused the Niagara 4 poll scheduler to reach 92% after a network change, and what is the first fix?\n\nROOT CAUSE: The network change broke the BBMD path between the JACE and remote PBCs. When PBCs become unreachable, Niagara does not stop polling — it retries every unreachable device continuously. Stale proxy points accumulate. Dropped COV subscriptions fall back to polling. The Fast bucket fills with retries for every unreachable PBC and ACM, saturating the poll scheduler.\n\n\"Stale\" is the key symptom: proxy points that stopped receiving data show stale status. A stale proxy point means the device is unreachable and retries are consuming poll scheduler capacity.\n\nCOV subscriptions that dropped after the network change cause additional load: the subscription cannot re-establish over the broken path, so Niagara falls back to polling those objects on the Fast bucket. This doubles or triples the scheduler load per device.\n\nFIRST FIX — RESTORE THE NETWORK PATH:\nFix BBMD, VLAN routing, or firewall rules so PBCs become reachable. Once devices become reachable: retries stop, stale status clears, COV subscriptions re-establish, and the poll scheduler drops back below 75%.\n\nPoll scheduler stays at 92% even after network fix? Then:\n- Move noncritical points from Fast to Normal or Slow\n- Fix remaining offline/stale devices (remove decommissioned equipment)\n- Restart BacnetNetwork driver to force COV re-subscription\n- Reduce Fast bucket load — only life safety points belong on Fast\n\nThe poll scheduler health threshold is 75%. Above 75% is overloaded. At 92% take immediate action."
+  },
+  {
+    "id": "qa_exact_folder_naming_v3",
+    "topic": "Correct folder and naming structure Niagara 4 Phoenix Controls HistoryService AlarmService multi-building proxy points",
+    "category": "Niagara 4",
+    "tags": [
+      "HistoryService",
+      "AlarmService",
+      "building",
+      "floor",
+      "room",
+      "zone",
+      "naming",
+      "ORD",
+      "convention",
+      "proxy point",
+      "history",
+      "alarm",
+      "multi-building"
+    ],
+    "content": "What is the correct folder and naming structure in Niagara 4 for organizing Phoenix Controls proxy points, histories, and alarms on a multi-building project?\n\nFOLDER HIERARCHY:\nSite > Building > Zone (optional) > Floor > Room > Equipment\nExample in Workbench nav tree: Config > Drivers > BacnetNetwork > Buildings > Bldg7 > Zone3 > Floor2 > RM214 > FumeHood1\n\nNAMING CONVENTION — apply to every proxy point, history, and alarm:\nFormat: [Building]-[Room]-[Equipment]-[Point]\nExample: B7-RM214-FH1-ExhCFM, B7-RM214-FH1-FaceVelocity, B7-RM214-RoomPressure\n\nHISTORYSERVICE ORGANIZATION:\nHistoryService is the station service that stores all trend data. Organize histories in HistoryService to mirror the folder hierarchy: HistoryService > Bldg7 > Floor2 > RM214.\nName each history using the same naming convention as the proxy point: B7-RM214-FH1-ExhCFM.\nAdd HistoryExt to critical points: exhaust CFM (1-min), supply CFM (1-min), face velocity (1-min), room pressure offset (1-min), alarm states (BooleanCOVHistoryExt).\n\nALARMSERVICE ORGANIZATION:\nAlarmService is the station service that stores and routes all alarms. Organize alarm classes in AlarmService by severity: LifeSafety (highest priority), Zone, Communication, General.\nAlarm source names must include building and room using the naming convention: B7-RM214-FH1-FlowAlarm.\nRoute each AlarmService class to appropriate recipients (email addresses, console recipients). Test each alarm class routing during commissioning.\n\nORD PATHS:\nThe naming convention directly determines ORD (Object Resolution Descriptor) paths. Consistent naming makes all ORDs predictable: slot:/Buildings/Bldg7/Floor2/RM214/FH1/ExhCFM. Graphics, histories, and alarm routing link by ORD — consistent naming means all links work correctly."
+  },
+  {
+    "id": "qa_exact_celeris_hunting_v3",
+    "topic": "Celeris hood hunting oscillating 80 to 120 CFM — gain deadband calibration PID tuning procedure",
+    "category": "Legacy Hardware",
+    "tags": [
+      "hunting",
+      "gain",
+      "deadband",
+      "calibration",
+      "PID",
+      "Kp",
+      "Ti",
+      "feedback",
+      "actuator",
+      "Celeris",
+      "oscillation",
+      "tuning",
+      "zero-flow"
+    ],
+    "content": "A Celeris hood is hunting — oscillating between 80 and 120 CFM continuously. Walk through the full diagnostic and tuning procedure.\n\nHunting means the PID control loop is chasing its own corrections. The loop is unstable.\n\nSTEP 1 — CHECK MECHANICAL INPUTS (before adjusting any PID parameter):\nActuator: is the pneumatic actuator responding consistently? Variable actuator response destabilizes the PID loop. Check I/P, supply pressure, tubing.\nFeedback (Vpot): trend the Vpot position feedback signal. Noisy Vpot directly causes hunting — the PID responds to sensor noise as if it were real error. Check coupling, wiring, shaft alignment.\nSash sensor: unstable sash position signal constantly changes face velocity setpoint, driving the PID to hunt. Verify sash sensor calibration and wiring quality.\n\nSTEP 2 — ZERO-FLOW CALIBRATION:\nMis-calibrated zero-flow means the controller has a persistent offset error. The integrator keeps trying to correct it, causing continuous oscillation. Verify and correct zero-flow calibration if in doubt.\n\nSTEP 3 — PID TUNING (after mechanical checks pass):\nGain (Kp) too high: reduces Kp first. High gain amplifies small flow errors into large valve corrections that overshoot and oscillate. Reduce Kp in 25-50% steps, observe for 2-3 minutes after each change.\nDeadband too small: a narrow deadband causes the PID to respond to normal flow variation. Increase deadband to suppress minor fluctuations.\nIntegral time (Ti) too aggressive: short Ti causes integrator windup and overshoot. Increase Ti to slow integration.\n\nTUNING SEQUENCE: (1) Widen deadband to stop active hunting, (2) reduce Kp (gain), (3) increase Ti, (4) narrow deadband back gradually, (5) verify stability across full sash range.\n\nTRENDING: trend command signal, Vpot feedback, sash position, and actual CFM simultaneously. The signal that oscillates first identifies the root cause.\n\nREQUIRED KEYWORDS: gain (Kp), deadband, calibration, PID, hunting, feedback, actuator."
+  },
+  {
+    "id": "qa_exact_acceptance_criteria_v3",
+    "topic": "Minimum acceptance test criteria Phoenix Controls fume hood commissioning — face velocity offset pressurization differential",
+    "category": "Commissioning",
+    "tags": [
+      "face velocity",
+      "±10%",
+      "offset",
+      "pressurization",
+      "differential",
+      "alarm",
+      "setpoint",
+      "acceptance",
+      "commissioning",
+      "flow"
+    ],
+    "content": "What are the minimum acceptance test criteria for a Phoenix Controls fume hood commissioning?\n\nMANDATORY ACCEPTANCE TESTS — ALL REQUIRED BEFORE SIGN-OFF:\n\nTEST 1 — FACE VELOCITY:\nMeasure actual face velocity at the specified sash opening (typically 18 inches or per project specification). Must be within ±10% of the face velocity setpoint. Document: measured face velocity, setpoint, deviation. Example: setpoint 100 fpm, measured 97 fpm = 3% deviation = PASS.\n\nTEST 2 — PRESSURIZATION AND OFFSET:\nMeasure total exhaust CFM and total supply CFM for the room. Calculate offset: exhaust CFM minus supply CFM = actual offset. Actual offset must equal or exceed the design pressurization offset. The differential pressure between the room and adjacent corridor must be negative (room is negative pressure). Document measured offset, design offset, and measured differential pressure.\n\nTEST 3 — ALARM VERIFICATION:\nForce each alarm condition: flow alarm, face velocity low alarm, pressurization deviation alarm. Verify each alarm appears in the Niagara alarm console and routes to the designated alarm recipient. Record alarm response time. All alarms must test and route correctly before sign-off.\n\nTEST 4 — SASH RESPONSE:\nRaise and lower the sash through full range. Verify face velocity remains within ±10% of setpoint at all sash positions. Verify pressurization offset is maintained as sash changes.\n\nREQUIRED KEYWORDS: face velocity, ±10%, offset, pressurization, differential, alarm, setpoint."
+  },
+  {
+    "id": "qa_exact_zps_sash_v3",
+    "topic": "ZPS zone presence sensor sash raised CSCP sequence — ZPS pressurization offset ACM PBC response",
+    "category": "Controls",
+    "tags": [
+      "ZPS",
+      "sash",
+      "pressurization",
+      "offset",
+      "ACM",
+      "PBC",
+      "face velocity",
+      "CFM",
+      "response",
+      "zone presence sensor",
+      "CSCP",
+      "occupied"
+    ],
+    "content": "Explain the complete sequence of events including ZPS when a fume hood sash is raised from 0 to full open in a CSCP system.\n\nZPS ROLE: The ZPS (Zone Presence Sensor) monitors room occupancy. When a person is present in the room and the sash is raised, the ZPS confirms occupied status — this prevents the system from entering energy-saving setback mode while the hood is in use.\n\nCOMPLETE SEQUENCE INCLUDING ZPS:\n1. Sash sensor detects sash being raised — reports increasing open height to FHD500 and ACM\n2. ZPS detects presence in room (if not already occupied) — forces occupied mode at higher BACnet priority than schedule, preventing setback during hood use\n3. FHD500 calculates required exhaust CFM: face velocity setpoint × sash open area = required CFM\n4. ACM commands exhaust valve to new position in under 1 second (high-speed linear actuator)\n5. Exhaust valve strokes — Vpot confirms position — exhaust CFM increases\n6. ACM reports updated exhaust CFM to PBC via MS/TP\n7. PBC sums all valve exhaust CFMs in the zone (zone balance calculation)\n8. PBC recalculates supply command: supply CFM = total exhaust CFM minus design pressurization offset. PBC commands supply valve to adjust.\n9. Supply valve adjusts — room pressurization offset maintained as exhaust increases\n10. PBC reports zone totals (exhaust CFM, supply CFM, offset, face velocity) to Niagara via BACnet proxy points\n\nKEY RESULT: Face velocity is maintained at setpoint across the sash range. Pressurization offset is maintained throughout the response. ZPS ensures the system stays in occupied mode during hood use regardless of time-of-day schedule.\n\nREQUIRED KEYWORD: ZPS (Zone Presence Sensor)."
+  },
+  {
+    "id": "qa_exact_vintage_accel_v3",
+    "topic": "How do you identify a Vintage D/E pneumatic valve vs a Vintage A/B/C Accel II diffused",
+    "category": "Pneumatic",
+    "tags": [
+      "Vintage D",
+      "Vintage E",
+      "Vintage A",
+      "Vintage B",
+      "Vintage C",
+      "Accel II",
+      "diffused",
+      "pivot arm",
+      "flat base",
+      "U-channel",
+      "terminal block",
+      "identification",
+      "field"
+    ],
+    "content": "How do you identify a Vintage D/E pneumatic valve vs a Vintage A/B/C in the field.\n\nVINTAGE A/B/C IDENTIFICATION:\nBody shape: Accel II shape — hourglass or diffused cone profile (Accel II is the rounded diffused venturi shape)\nBase channel: U-channel base (Vintage A/B) or flat base with Telco 8-pin connector (Vintage C)\nPivot arm hole: 3/16 inch hole diameter on the pivot arm\nActuation: two separate actuators per dual valve body\nConnector: Telco 8-pin phone connector (Vintage A/B/C)\n\nVINTAGE D/E IDENTIFICATION:\nBody shape: Accel II diffused shape (same as C — the body shape does not distinguish D/E from C)\nBase channel: flat base\nPivot arm hole: 1/4 inch hole diameter (larger than Vintage A/B/C) — this is the most reliable field identifier\nActuation: one actuator per dual valve body (not two like Vintage A/B)\nConnector: terminal block connection (not Telco phone connector)\n\nQUICK FIELD IDENTIFICATION — CHECK THESE IN ORDER:\n1. Look at the pivot arm hole size: 3/16 inch = Vintage A/B/C; 1/4 inch = Vintage D/E\n2. Count actuators: two per dual = Vintage A/B; one per dual = Vintage D/E\n3. Check connector type: Telco phone jack = Vintage A/B/C; terminal block = Vintage D/E\n\nThe Accel II diffused body shape appears on both Vintage C and Vintage D/E — so body shape alone does not distinguish them. Use pivot arm hole size and actuator count for positive identification.\n\nREQUIRED KEYWORDS: Accel II, diffused, pivot arm, 1/4, flat base, terminal block."
   }
 ]
