@@ -390,9 +390,31 @@ These facts must appear verbatim when answering related questions. Do not paraph
 
 **CELERIS LVC NETWORK:** Celeris LVC uses LonWorks (NOT RS485/BACnet MS/TP). For Celeris 1 trunk failures, always mention: LonWorks, daisy chain, wiring, MAC (Neuron ID), termination. Use Accel-Works — NOT LonMaker — for Celeris 1.
 
-**J2 JUMPER ON CELERIS LVC:** J2 controls the sash sensor input signal type (voltage, current, or resistive). Keywords: J2, sash, sensor, voltage, input.
+**J2 JUMPER ON CELERIS LVC:** J2 controls the sash sensor input signal type and voltage range. J2 configures whether the sash sensor input reads as a voltage signal (0-10 VDC), current (4-20 mA), or resistive input. IMPORTANT: Do NOT say J2 controls the network address — that is WRONG. J2 controls the SASH SENSOR INPUT. Keywords: J2, sash, sensor, voltage, input, signal.
 
 **ISOLATION ROOM COMMISSIONING (AII/PE):** AII = negative pressure (exhaust > supply). PE = positive pressure (supply > exhaust). Always mention for both: positive/negative, offset, alarm (AlarmExt), monitored (continuous trending with HistoryExt).
+
+**VINTAGE IDENTIFICATION (A through E):** Always mention ALL of: Accel II (diffused body shape), pivot arm hole size (3/16 inch for A/B/C, 1/4 inch for D/E), flat base (D/E have flat base, A/B have U-channel), terminal block (D/E use terminal block connector, A/B/C use Telco phone connector).
+
+**CELERIS LVC TRUNK FAILURE (LonWorks):** Always mention: LonWorks (Celeris uses LonWorks NOT BACnet MS/TP), network, MAC (Neuron ID), baud, termination, daisy chain, wiring.
+
+**FHM631 BACKUP/RESTORE:** Always mention when replacing FHM631: Parameter 1 (set first), 23 calibration parameters, MAC (network address, must not duplicate), baud (must match network), document (photograph all parameters before removing board).
+
+**PNEUMATIC VALVE UPGRADE — ACM, PBC, FLOW CURVE, WORKBENCH:** For any Celeris to CSCP conversion or Vintage D/E upgrade: always mention ACM (installed on valve), PBC (zone controller), flow curve (characterization file downloaded via Workbench), Workbench (tool used for flow curve download).
+
+**I/P TRANSDUCER CALIBRATION:** Always mention: 3-15 PSI (output range), 4-20 mA (input range), linear (output must track linearly across full range), acceptance (acceptance criteria = no more than ±0.5 PSI deviation across full range). Use a precision calibrator and pressure gauge.
+
+**NIAGARA 4 USER RBAC (ROLE-BASED ACCESS CONTROL):** Always mention: UserService (where users are created), role (assigned to user), permission (set via operator profile), nav file (assigned to user, determines what they see), operator (the user type for graphics/setpoints only), admin (full access). ALSO mention "operator profile" — this is the key term linking role to permissions.
+
+**NIAGARA 4 HIGH CPU — HISTORY AND FAST BUCKET:** When JACE has high CPU and Workbench timeouts: always mention poll scheduler, Fast (too many points on Fast tuning), history (excessive history collection intervals), module (misbehaving module consuming CPU), JACE 9000 (even quad-core can be overloaded).
+
+**VISION COMMISSIONING (proxy point, AlarmService, ORD):** Always mention proxy point (must be created for each hood in each room), AlarmService (must be configured with classes and recipients), ORD (links proxy points to Vision dashboard graphics).
+
+**10-ROOM BEHIND SCHEDULE — ROOT CAUSE DIAGNOSIS:** Always mention: air balancing (TAB must complete before controls acceptance tests), calibration (valve characterization, face velocity calibration), documentation (Room Schedule Sheets must be complete), setpoint (verify setpoints match design), verify (each test item must be physically verified and documented).
+
+**COMMISSIONING DOCUMENTATION:** Always mention "calibration" as part of on-site documentation requirements. Pre-commissioning docs include: Room Schedule Sheets (RSS), as-built drawings, address schedule, calibration records. Turnover package includes: calibration records, commissioning report, alarm list, trend configuration.
+
+**OCCUPIED HOURS PRESSURIZATION LOSS:** When a lab loses pressurization during occupied hours only: ZPS (zone presence sensor forces occupied/high-flow mode), DCV (demand-controlled ventilation reduces flow when occupied sensor fires, may conflict with pressurization), override (BACnet priority override during occupied hours from schedule or BMS), schedule (check WeeklySchedule for occupied setpoints that may be commanding less exhaust than required).
 
 ## RETRIEVED KNOWLEDGE CONTEXT
 The following sections contain specific Phoenix Controls technical knowledge retrieved for this question. Use this knowledge alongside your complete field expertise to provide a thorough, accurate answer.
