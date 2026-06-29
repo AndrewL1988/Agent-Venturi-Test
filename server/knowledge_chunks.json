@@ -4796,5 +4796,140 @@
       "Workbench"
     ],
     "content": "VANTAGE NETWORKING — PHOENIX CONTROLS ARCHITECTURE REFERENCE\n\nVANTAGE SYSTEM ARCHITECTURE:\nVantage is the Phoenix Controls room-level control platform using RMC300 (Room Controller) and RMI300 (Room Integrator) hardware running Niagara 4.\n- RMC300: One per zone/room. Connects via MS/TP RS485 to ACMs in the zone. Connects via Ethernet to the RMI300.\n- RMI300: One per building section or per IT network segment. Aggregates data from multiple RMC300s. Provides BACnet router function. Connects to BMS via BACnet/IP.\n\nLON (LONWORKS) DEVICES IN VANTAGE:\nLegacy Celeris devices communicate via LonWorks (TP/FT-10). The RMC300 can include a LON option card to communicate with legacy Celeris devices. The RMC300 then translates LonWorks data to BACnet for the BMS.\n\nNETWORK HIERARCHY:\nLaptop → (Ethernet) → RMI300 (Niagara 4 station) → (Ethernet) → RMC300 (Niagara 4 station) → (RS485 MS/TP or LonWorks) → ACMs/valves\n\nBACNET ROUTING THROUGH VANTAGE:\nThe RMI300 acts as a BACnet/IP to BACnet MS/TP router. BMS on the BACnet/IP network can communicate with individual ACMs and room-level data points through the RMI300's routing function. Device Instance must be unique across the entire BACnet internetwork including all RMC and RMI devices.\n\nCOMMISSIONING SEQUENCE:\n1. Commission RMC300s first: configure MS/TP network, add ACMs, verify LON or MS/TP communication with all valves\n2. Then commission RMI300: add RMC300s, configure BACnet routing, verify IP connectivity to BMS\n3. Verify BACnet points from BMS: use Device Manager to discover RMI/RMC, add points, verify live data\n4. Use Workbench Tip #4 or #5 for LON-to-BACnet IP or LON-to-BACnet MS/TP point mapping\n\nDEFAULT IP ADDRESS SCHEME:\n- Each RMC300 gets a static IP address on the local network\n- RMI300 has two Ethernet ports: one for the IT/BMS network, one for the RMC300 network (isolation)\n- If DHCP is used: DHCP reservations based on MAC address are recommended for RMC/RMI — DHCP leases that change break Workbench connections\n\nTROUBLESHOOTING VANTAGE NETWORKING:\n- Cannot connect Workbench to RMC: verify IP address, verify Fox port 4911 is open, verify RMC is powered\n- BMS cannot see BACnet points: verify RMI BACnet/IP is enabled, Device Instance unique, network number correct, BACnet routing enabled\n- RMC cannot see all ACMs: verify MS/TP baud rate, EOL termination, MAC address uniqueness, cable integrity"
+  },
+  {
+    "id": "n4_relations_guide",
+    "topic": "Niagara 4 Relations — RelationMark, Drag and Drop, Relation Sheet, Wire Sheet, Hierarchy Building",
+    "category": "Niagara 4",
+    "tags": [
+      "relations",
+      "RelationMark",
+      "Relation Sheet",
+      "Wire Sheet",
+      "hierarchy",
+      "RelationId",
+      "TagDictionaryService",
+      "tag",
+      "metadata",
+      "drag and drop",
+      "Relate To",
+      "Relate From"
+    ],
+    "content": "NIAGARA 4 RELATIONS — COMPLETE REFERENCE (Tridium Relations Guide, 2015)\n\nWHAT RELATIONS ARE:\nRelations provide metadata used primarily in building hierarchies for logical views of a system based on relationships between components. You can organize the display of components in various meaningful ways — for example, grouping all VAV controllers by the AHU supplying them, regardless of the actual station folder structure.\n\nRelations work with tags: a relation links two components with a RelationId. Tags added to a relation provide additional metadata for more specific filtering when building hierarchies.\n\nADDING A RELATION USING RELATIONMARK:\n1. Select one or more components to mark as the \"from\" or \"to\" side of the relation\n2. Right-click on the selection → click Relation Mark\n3. Select the other side of the relationship (the other component)\n4. Right-click → click either \"Relate To\" or \"Relate From\" depending on which side was marked first\n5. A Relation dialog appears — select the desired RelationId from the pull-down list\n6. The list is populated from RelationInfoLists defined in the Tag Dictionaries installed in the TagDictionaryService\n\nADDING A RELATION USING DRAG AND DROP (Wire Sheet):\n1. In Wire Sheet view, click the Workbench Wire Sheet menu → click Show Relations\n2. On the desired \"relate to\" component, click the component's footer and drag to the footer of the desired \"relate from\" component\n3. A Relation dialog appears — select the desired RelationId from the pull-down list\n4. In Wire Sheet view, the relation is shown as a dashed line between the two components\n\nEDITING A RELATION FROM RELATION SHEET:\n1. Select the desired component and open the Relation Sheet view\n2. Right-click on the desired relation row → click Edit\n3. In the Edit dialog: change the tag dictionary or tag name in the RelationId, or change the Source ORD\n\nTAGDICTIONARYSERVICE:\nThe TagDictionaryService holds all tag dictionaries used for Relations and Tagging. The RelationId pull-down list in the Relation dialog is populated from RelationInfoLists defined in the Tag Dictionaries installed in the TagDictionaryService. Both Niagara and Haystack tag dictionaries can be installed here."
+  },
+  {
+    "id": "n4_tagging_guide_complete",
+    "topic": "Niagara 4 Tagging — TagDictionaryService, Haystack, Ad Hoc Tags, Batch Editor, Tag Groups, Implied Tags, License",
+    "category": "Niagara 4",
+    "tags": [
+      "tagging",
+      "TagDictionaryService",
+      "Haystack",
+      "Niagara dictionary",
+      "ad hoc",
+      "tag group",
+      "batch editor",
+      "implied tags",
+      "Edit Tags",
+      "license",
+      "Dictionary.1limit",
+      "hierarchy",
+      "hs:",
+      "n:",
+      "smart tag"
+    ],
+    "content": "NIAGARA 4 TAGGING — COMPLETE REFERENCE (Tridium Tagging Guide, July 2016)\n\nWHAT TAGGING IS AND WHY:\nAdding tags to station objects streamlines setting up large systems. Instead of mapping data point by point, tags facilitate the process and improve search results and hierarchical navigation. If you add tags using standard Tag Dictionaries, other applications can discover station content without understanding the naming convention used by the installer. Typical tagging includes: networks, devices, points, control blocks — also mapped to domain-specific entities like buildings, systems, and equipment.\n\nLICENSE REQUIREMENTS:\nThe tags license is required to use the TagDictionaryService and tag dictionaries. The Dictionary.1limit attribute limits the number of tag dictionaries available. By default, you are limited to the first two tag dictionaries. Dictionaries added above the license limit will be in fault — tags in a faulted dictionary are not available in the Edit Tags dialog.\n\nTAGGING PROCESS:\n1. Identify your purpose: enterprise navigation, maintenance views, or end-user navigation\n2. Ensure you have the needed dictionaries:\n   - Niagara Tag Dictionary: included by default in TagDictionaryService in every new station\n   - Haystack Tag Dictionary: add from the haystack palette if needed\n   - Ad Hoc tags: create custom tags without a dictionary\n3. Add tags to components (one at a time, using Tag Groups, or using Batch Editor)\n\nDICTIONARIES AND SHORTCUTS:\n- Search field shortcuts: type \"hs:\" for Haystack, \"n:\" for Niagara dictionary — filters the tag list immediately\n- Niagara and Haystack Smart Tag Dictionaries are the most common; community-developed Smart Tag Dictionaries may eliminate tagging effort for common equipment types\n\nCOMMON TAGGING TASKS:\nCreating a tagged device: Right-click on device → Edit Tags → select dictionary → select tag or tag group → Add. You can add multiple tag types to one device.\n\nAdding Ad Hoc tags: Tags not in any installed dictionary. Right-click component → Edit Tags → select \"Ad Hoc\" → type tag name and value. Ad Hoc tags provide flexibility when standard dictionaries don't cover the needed metadata.\n\nRemoving a tag: Right-click component → Edit Tags → select the tag → click Remove.\n\nAdding tags during Discovery: In the Discovered pane (during BACnet or other protocol discovery), you can add tags to discovered devices before adding them to the database. This pre-tags devices at import time.\n\nAdding tags in Database pane: select component in Database pane → right-click → Edit Tags.\n\nTAG GROUPS:\nTag Groups are predefined collections of tags that can all be added with a single Add action. Instead of adding ten tags one at a time to every device of the same type, create a Tag Group with all ten tags and apply the group in one step. Right-click component → Edit Tags → select Tag Group from the pull-down → click Add.\n\nBATCH EDITOR:\nThe Batch Editor allows adding, modifying, or removing tags across many components at once. Instead of editing each component individually, Batch Editor shows all components in a table and allows mass tag operations. Access via: right-click on a folder → Tag Batch Editor.\n\nIMPLIED TAGS:\nImplied tags are tags that are automatically inherited from a parent component or from a tag group assignment. They are not directly added to the component but are inferred from the hierarchy or tag group. View implied tags: Edit Tags dialog (shows implied tags in italics), or use Spy view on the component.\n\nEXPORTING AND IMPORTING TAG DICTIONARIES:\nTag dictionaries can be exported as .xml files and imported into other stations. This allows consistent tagging across multiple jobs without recreating dictionaries from scratch."
+  },
+  {
+    "id": "n4_ax_migration_guide",
+    "topic": "NiagaraAX to Niagara 4 Migration — Platform Compatibility, JACE Support, Resource Requirements, Workflow",
+    "category": "Niagara 4",
+    "tags": [
+      "migration",
+      "NiagaraAX",
+      "AX",
+      "N4",
+      "JACE-2",
+      "JACE-202",
+      "JACE-403",
+      "JACE-545",
+      "JACE-NXT",
+      "JACE-NXS",
+      "SoftJACE",
+      "disk space",
+      "heap",
+      "RAM",
+      "bog file",
+      "migration tool",
+      "wire compatibility",
+      "EOL"
+    ],
+    "content": "NIAGARAAX TO NIAGARA 4 MIGRATION — COMPLETE REFERENCE (Tridium AX to N4 Migration Guide, May 2016)\n\nWHY MIGRATION IS NEEDED:\nNiagaraAX (AX) and Niagara 4 (N4) are different platforms. After installing N4 Workbench, you cannot simply use stations saved in NiagaraAX format. Migration converts AX artifacts (.bog files, Px files) to N4 format using the N4 migration tool.\n\nPLATFORM COMPATIBILITY — WHICH JACE CONTROLLERS MIGRATE:\nCANNOT migrate to N4 (not supported):\n- JACE-2 (NPM2)\n- JACE-202 (NPM2)\n- JACE-403\n- JACE-545\nThese platforms are too old and lack the resources for N4. They can remain as AX stations under the NiagaraNetwork of an N4 Supervisor (data exchange is still possible).\n\nCAN migrate to N4 (supported):\n- JACE-NXT\n- JACE-NXS\n- SoftJACE\n- Any supported PC/server\n\nPLATFORM RESOURCE REQUIREMENTS FOR MIGRATION:\nN4 requires MORE disk space, MORE Java heap, and MORE system RAM than an equivalent AX station:\n- Disk space: N4 requires 14-16 MB more than AX (due to Java 8 VM vs Java 5, and new UX features)\n- Java heap: N4 requires 10 MB more baseline heap than equivalent AX station\n- History RAM disk (JACE-6 only): maximum reduced from 64MB to 32MB in N4 to free system memory\n\nMinimum free resources before migration (approximate):\n- JACE-NXT/NXS: verify minimum 24 MB free disk space, 29 MB free heap\n- Run the AX Resource Checker BOG file before migrating to verify platform meets minimum requirements\n\nMIGRATION WORKFLOW:\n1. Upgrade AX station to AX-3.8 first (required baseline for migration tool)\n2. Verify system operates correctly at AX-3.8 (communications, histories, alarms working)\n3. Make complete station backups (.bog files) from each controller\n4. Run the N4 migration tool on each station backup — converts .bog to N4 format\n5. Install N4 on the controllers (upgrade firmware)\n6. Restore migrated station to each controller\n7. Perform migrated database cleanup (fix any components that don't convert cleanly)\n8. Preliminary N4 station checkout (verify operation matches pre-migration)\n9. System verification (check histories, alarms, BACnet communication, graphics)\n\nWIRE COMPATIBILITY:\nWire compatibility means AX and N4 controllers can coexist on the same NiagaraNetwork and communicate with each other during a phased migration. A migrated N4 Supervisor can still communicate with AX JACE controllers that haven't been migrated yet. This allows phased migration instead of requiring all controllers to be upgraded simultaneously.\n\nCONFIGURING FOR USER MIGRATION:\nBefore migrating users from AX to N4: a configuration flag must be set in the station to properly migrate user accounts and credentials. Failure to set this flag before migration may result in user accounts not transferring correctly.\n\nFILE LOCATIONS IN N4:\nN4 stores station files in different locations than AX. Key paths:\n- Station home: varies by platform type and supervisor vs JACE\n- Protected station home: corrected path noted in May 2016 update — verify against current N4 Platform Guide\n\nAX END OF LIFE:\nNiagaraAX reached End of Life April 30, 2020. No new AX licenses are available. All new systems must use Niagara 4. Existing AX systems should plan migration."
+  },
+  {
+    "id": "n4_formatting_examples",
+    "topic": "Niagara 4 bFormat Strings — %out.value%, %displayName%, %parent.name%, %user()%, Dynamic Labels",
+    "category": "Niagara 4",
+    "tags": [
+      "bFormat",
+      "format string",
+      "out.value",
+      "out.status",
+      "displayName",
+      "parent.name",
+      "user()",
+      "Hours",
+      "Minutes",
+      "dynamic label",
+      "Px",
+      "graphics",
+      "slot",
+      "property"
+    ],
+    "content": "NIAGARA 4 BFORMAT STRINGS — COMPLETE REFERENCE (Niagara 4 Certification Training)\n\nbFormat strings are used in Niagara 4 Px graphics and labels to create dynamic text that displays live values and component information. Text inside % signs is dynamic; text outside % signs is static.\n\nBASIC VALUE AND STATUS:\n%out.value%       — Value of the Out slot (the component's output)\n%out.status%      — Status of the Out slot (ok, stale, fault, etc.)\n%out.value% %out.status%  — Both value and status together (two bFormats with a space between)\n\nTIME ELAPSED:\n%Hours%           — Total elapsed time in hours (use for burn time, runtime counters)\n%Minutes%         — Total elapsed time in minutes\nIMPORTANT: Use either %Hours% OR %Minutes% — NOT BOTH in the same label, since both display total elapsed time (not hours + remaining minutes).\nExample: \"Burn Time = %Hours% HRS\" displays as \"Burn Time = 568 HRS\"\n\nCOMPONENT NAMING:\n%displayName%           — Display name of the slot/component\n%parent.name%           — Name of the parent component (one level up in the hierarchy)\n%parent.parent.name%    — Name of the parent's parent (two levels up)\nExample: \"%parent.name% > %displayName%\" for a control relay inside LightingSystem folder displays as \"LightingSystem > ControlRelay\"\n\nANY PROPERTY:\n%property.value%        — Value of any component property (replace \"property\" with actual slot name)\n%anyproperty.value%     — Value of any specific named property slot\n%high.value% / %low.value%  — Example combining two property values with static text between them\n\nCURRENT USER:\n%user()%               — Currently logged in Niagara user name. Useful for audit displays and user-specific panels.\n\nCOMBINING BFORMATS:\nMultiple bFormat expressions can be strung together separated by spaces:\n\"%high.value% / %low.value% >> %weatherSummary%: %precipChance%\" \ndisplays as: \"65 F / 44 F >> Rain Likely: 67.0%\"\n\nADDING STATIC TEXT:\nAll text outside the % delimiters is static and always displayed. Insert ANY text before or after % to provide labeling without needing a separate DisplayName label.\nExample: \"Text = %out.value%\" where \"Text = \" is static and %out.value% is dynamic.\n\nUSE IN PX GRAPHICS:\nApply bFormat strings to Label widgets, BoundLabel, or any widget that accepts a format string in its properties. This eliminates the need for separate static label components next to dynamic value displays."
+  },
+  {
+    "id": "n4_lonworks_for_niagara",
+    "topic": "LonWorks Platform for Niagara 4 — Neuron Chip, LonTalk, SNVT, TP/FT-10, Celeris Integration Context",
+    "category": "Niagara 4",
+    "tags": [
+      "LonWorks",
+      "LonTalk",
+      "Neuron chip",
+      "SNVT",
+      "TP/FT-10",
+      "TP-78",
+      "transceivers",
+      "routers",
+      "LonMark",
+      "network variable",
+      "Echelon",
+      "protocol",
+      "Celeris",
+      "interoperability",
+      "functional profile"
+    ],
+    "content": "LONWORKS PLATFORM — REFERENCE FOR NIAGARA 4 AND PHOENIX CONTROLS INTEGRATION\n\nWHAT LONWORKS IS:\nLonWorks (by Echelon Corporation) is a building automation communications technology using the proprietary LonTalk protocol. Unlike BACnet (an open standard), LonWorks is proprietary. LonWorks uses Echelon Neuron Chip application processors in devices. Phoenix Controls Celeris systems use LonWorks (TP/FT-10 free topology or TP-78 bus).\n\nLONTALK PROTOCOL KEY CONCEPTS:\nNetwork Variables (NVs): LonWorks uses Network Variables to exchange data between devices. Each device publishes input and output network variables. Connecting an output NV of one device to the input NV of another creates a binding — data flows automatically.\nStandard Network Variable Types (SNVTs): Standard data types that allow interoperability between devices from different manufacturers. SNVT_flow, SNVT_temp, SNVT_switch are examples. Using SNVTs means devices from different vendors can exchange data without custom programming.\nMessage Types: explicit (addressed to specific device), implicit (broadcast), acknowledged, unacknowledged. For critical data use acknowledged messages.\nAddressing: LonWorks addresses devices by Domain, Subnet, and Node ID. The Neuron ID (48-bit hardware address factory-programmed into each Neuron chip) uniquely identifies each device. Configuration uses the Neuron ID for network commissioning.\n\nTHE NEURON CHIP:\nEvery LonWorks device contains an Echelon Neuron chip. The Neuron chip handles both the LonTalk communications protocol AND application logic. The Neuron chip runs two communication microprocessors (handling the LonTalk protocol) and one application microprocessor (running device-specific logic). This architecture means the LonWorks protocol is implemented in hardware/firmware — not in software like BACnet.\n\nCHANNEL TYPES — CRITICAL FOR PHOENIX CONTROLS:\nTP/FT-10 (Free Topology): most common for building automation. Free topology means devices can be wired in bus, star, ring, or any combination. Uses twisted pair at 78 kbps. Maximum total cable: 500m (1640 ft) without repeater. Termination: two termination capacitors (one at each end of the channel for bus topology).\nTP-78 (Bus Topology): older bus-only topology. Devices must connect in daisy chain. 78 kbps.\nBoth are used in Phoenix Controls Celeris installations.\n\nLONMARK INTEROPERABILITY:\nLonMark International defines guidelines for LonWorks interoperability. A LonMark Certified device implements standard SNVTs and functional profiles, allowing it to work with other LonMark devices from any manufacturer. Celeris LVC controllers are LonMark certified.\n\nBACNET VS LONWORKS FOR PHOENIX CONTROLS:\n- BACnet: open ANSI/ASHRAE/ISO standard. Native to CSCP/PBC 500 series. Supported by virtually all BMS vendors.\n- LonWorks: proprietary (Echelon). Used in legacy Celeris systems. Requires a gateway (PCI8000 or RMC300 with LON option card) to bridge LonWorks to BACnet for BMS integration.\n- The debate between BACnet and LonWorks has been resolved in the industry — BACnet has become the dominant open standard, while LonWorks remains in legacy installations.\n- For Phoenix Controls: CSCP (new installations) uses BACnet/MS/TP. Celeris (legacy) uses LonWorks. Migration from Celeris to CSCP eliminates the LonWorks dependency.\n\nNIAGARA 4 LONWORKS INTEGRATION:\nNiagara 4 connects to LonWorks networks via a LON option card in the RMC300 or via a PCI8000 gateway. The Niagara LonWorks driver (OpenLDV or similar) manages communication with the LonWorks channel. Discovered LonWorks devices appear as proxy points in the Niagara station, same as BACnet devices. Use Accel-Works for Celeris 1, LonMaker for Celeris 2 — NEVER use LonMaker on Celeris 1."
+  },
+  {
+    "id": "n4_webstart_jnlp",
+    "topic": "Niagara Web Start — JNLP, Java Web Start, Workbench Outside Browser, AX-3.8U1, Multi-Station Navigation",
+    "category": "Niagara 4",
+    "tags": [
+      "Web Start",
+      "JNLP",
+      "Java Web Start",
+      "browser",
+      "Workbench",
+      "applet",
+      "AX-3.8",
+      "NPAPI",
+      "multi-station",
+      "shortcut",
+      "brand",
+      "OEM",
+      "Java 8"
+    ],
+    "content": "NIAGARA WEB START — REFERENCE (Tridium Niagara Web Start Guide, April 2016)\n\nWHAT WEB START IS:\nJava Web Start is an Oracle technology (part of the Java Runtime Environment) that allows Workbench to run OUTSIDE the browser. NiagaraAX-3.8U1 introduced Web Start as an alternative to the Java browser applet. The key difference: it removes the need for the browser Java plugin (NPAPI), which many modern browsers disabled.\n\nHOW IT WORKS:\n1. Navigate to the station login page in a browser\n2. Click \"To connect using Java Web Start click here\" link on the login page\n3. Browser downloads a JNLP file\n4. Java Web Start launches the Niagara Workbench application outside the browser\n5. Once downloaded, the JNLP file can launch Workbench on subsequent occasions without needing the browser again\n6. The browser can be closed or navigated away — the Workbench application continues running independently\n\nREQUIREMENTS:\n- Java 8 JRE minimum (Web Start checks for Java 8 but does NOT check the update release version)\n- Works on AX-3.8U1 — Note: this is an AX feature, not native N4. Provided for reference when working with legacy AX systems.\n\nADVANTAGES OVER BROWSER APPLET:\n- Overcomes NPAPI browser compatibility problems (Chrome, Firefox disabled Java NPAPI support)\n- Runs as a full desktop application (not constrained by browser sandbox)\n- Saves JNLP file locally for repeated use without browser\n- Can be branded with OEM icons and shortcut text\n\nCONFIGURATION:\nWeb Start Config is an added slot in the Web Services Property Sheet (AX-3.8U1).\nProperties allow:\n- Enabling/disabling application shortcuts (desktop and Start menu)\n- Modifying default shortcut text\n- Branding: OEM distributors configure brand.properties with their brand defaults; integrators can modify shortcut text for end users\n\nMULTI-STATION NAVIGATION:\nWeb Start supports connecting to multiple stations without launching separate browser instances. This is useful when an integrator manages several JACE controllers — all can be monitored in a single Workbench session launched via Web Start.\n\nLIMITATIONS:\n- Web Start application cannot open certain file types that the browser-based applet can\n- Requires Java 8 JRE on client PC\n- Some network/firewall configurations may block JNLP file download\n\nRELEVANCE FOR N4:\nN4 has moved beyond the Web Start approach — N4 uses HTML5 Hx graphics that run natively in modern browsers without any Java plugin. Web Start knowledge is useful when maintaining legacy AX-3.8 systems or troubleshooting older installations."
   }
 ]
