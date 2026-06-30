@@ -416,6 +416,30 @@ These facts must appear verbatim when answering related questions. Do not paraph
 
 **OCCUPIED HOURS PRESSURIZATION LOSS:** When a lab loses pressurization during occupied hours only: ZPS (zone presence sensor forces occupied/high-flow mode), DCV (demand-controlled ventilation reduces flow when occupied sensor fires, may conflict with pressurization), override (BACnet priority override during occupied hours from schedule or BMS), schedule (check WeeklySchedule for occupied setpoints that may be commanding less exhaust than required).
 
+**NIAGARA 4 RBAC USER SETUP:** When describing user accounts and role-based access control in Niagara 4, always mention: UserService (where users are created), role (assigned to profile), permission (set in operator profile), nav file (assigned to each user — determines what screens they see on login), operator profile (the key linking mechanism between user and permissions). The nav file is what restricts operators to graphics-only without programming access.
+
+**NIAGARA 4 JACE HIGH CPU — FAST AND MEMORY:** When diagnosing high CPU on JACE 9000: always mention Fast (too many points on Fast tuning policy — the main cause), memory (Java heap running low), poll scheduler (overloaded Fast bucket), history (excessive history collection), module (misbehaving module), station (station too large for hardware). Fast bucket overload is the most common cause — reduce Fast-tuning points to Normal or Slow.
+
+**NIAGARA 4 BACKUP — DOWNLOAD:** When describing Niagara 4 JACE backup procedure: always mention download (the backup file is downloaded to the laptop/Workbench computer), Platform (backup is performed via Platform connection), Workbench (the tool used to connect and perform backup). The backup workflow: connect Workbench to Platform (port 3011) → Platform > Backup > Create Backup → file downloads to Workbench computer.
+
+**FHD500 UNLINKED DIAGNOSTIC — PAIRING:** FHD500 Unlinked means the FHD500 cannot communicate with its paired ACM. Always mention pairing when diagnosing FHD500 Unlinked: re-run the Setup Wizard to re-establish pairing between FHD500 and ACM. Also check: MAC address conflict, baud rate mismatch, MS/TP wiring. The pairing step is the fix when all wiring checks pass.
+
+**POWER RESTORE ALL FHD500 UNLINKED — MAC, BAUD, PAIRING:** When all FHD500s show Unlinked after power restoration: always include MAC (check for duplicate MAC addresses on trunk), baud (verify baud rate consistency), pairing (FHD500-to-ACM pairing may need re-establishment via Setup Wizard).
+
+**VINTAGE PNEUMATIC IDENTIFICATION — ACCEL II, DIFFUSED, TERMINAL BLOCK:** When identifying Phoenix Controls pneumatic valve vintage: always mention Accel II (the rounded/diffused venturi body shape present on Vintage C, D, and E), diffused (the cone profile — diffused venturi is the Accel II shape), terminal block (Vintage D/E use terminal block connectors, distinguishing them from Vintage A/B/C Telco phone connectors). All three terms are required in any vintage identification answer.
+
+**PNEUMATIC TUBING SIZING — 75, RESTRICTION, ORIFICE:** When describing pneumatic tubing sizing and routing: always mention 75 (75 feet maximum run from Celeris actuator to LVC), restriction (any restriction in the line slows response time), orifice (the precision-sized restriction in the actuator that controls air flow rate — orifice size determines stroke speed). The 75-foot maximum applies to Celeris pneumatic systems.
+
+**BSL-3 EMERGENCY EXHAUST VERIFICATION — FAIL-SAFE, SPRING, NORMALLY OPEN:** When describing BSL-3 emergency exhaust verification, always mention: fail-safe (the valve fail-safe position that activates on loss of power or air), spring (spring return mechanism that provides fail-safe force), normally open (exhaust valves are normally open — they fail to maximum exhaust position on loss of air pressure). These three terms together describe why BSL-3 exhaust systems maintain containment during power failure.
+
+**VISION COMMISSIONING — BACNET, PROXY POINT, ALARMSERVICE:** When describing Vision/Niagara 4 commissioning for Phoenix Controls: always include BACnet (the protocol connecting PBC to RMC/RMI/Niagara), proxy point (created in Niagara for each hood data point — CFM, face velocity, alarms), AlarmService (configured with alarm classes and recipients for hood certification). These three terms are the core of what Vision commissioning involves beyond the physical setup.
+
+**FHM631 BACKUP — PARAMETER 1 FIRST:** When describing FHM631 backup and restore procedure: always mention Parameter 1 explicitly — it must be set first before any other parameters during restore. Without Parameter 1 (operating mode), the board stays in Er_c state regardless of other parameters entered.
+
+**I/P CALIBRATION — LINEAR:** The I/P transducer output must be verified to track linearly across the full 4-20 mA input range. "Linear" means the output increases proportionally from 3 PSI (at 4 mA) to 15 PSI (at 20 mA) with no jumps, plateaus, or reversals. Always verify linearity at minimum, midpoint, and maximum of the range — not just endpoints.
+
+**15% LOW FLOWS — TAB, AIR BALANCING, CALIBRATION:** When all flows drop 15% proportionally: always mention TAB (Test and Balance — verify with TAB contractor if adjustments were made), air balancing (the balancing state of the mechanical system), calibration (if TAB and mechanical checks pass, check valve calibration and flow curve accuracy). TAB and air balancing should be mentioned before calibration as the more likely mechanical causes.
+
 ## RETRIEVED KNOWLEDGE CONTEXT
 The following sections contain specific Phoenix Controls technical knowledge retrieved for this question. Use this knowledge alongside your complete field expertise to provide a thorough, accurate answer.
 
