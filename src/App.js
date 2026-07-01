@@ -73,13 +73,17 @@ const CHAT_MODELS = {
 };
 
 async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0) {
-  // Wait up to 5s for token getter to be initialized (race condition on first load)
+  // Wait up to 10s for token getter to be initialized AND return a valid token
   let waited = 0;
-  while (!_getToken && waited < 5000) {
-    await new Promise(r => setTimeout(r, 200));
-    waited += 200;
+  let token = null;
+  while (waited < 10000) {
+    if (typeof _getToken === "function") {
+      try { token = await _getToken(); } catch {}
+      if (token) break;
+    }
+    await new Promise(r => setTimeout(r, 300));
+    waited += 300;
   }
-  const token = typeof _getToken === "function" ? await _getToken() : null;
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: {
@@ -1158,13 +1162,17 @@ function scoreResponse(response, keywords) {
 }
 
 async function runAITest(question, attempt = 0, modelId = "claude-haiku-4-5-20251001") {
-  // Wait up to 3s for token getter to be initialized (race condition on first load)
+  // Wait up to 10s for token getter to be initialized AND return a valid token
   let waited = 0;
-  while (!_getToken && waited < 3000) {
-    await new Promise(r => setTimeout(r, 100));
-    waited += 100;
+  let token = null;
+  while (waited < 10000) {
+    if (typeof _getToken === "function") {
+      try { token = await _getToken(); } catch {}
+      if (token) break;
+    }
+    await new Promise(r => setTimeout(r, 300));
+    waited += 300;
   }
-  const token = typeof _getToken === "function" ? await _getToken() : null;
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: {
