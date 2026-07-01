@@ -3490,14 +3490,7 @@ export default function AuthWrapper() {
     </div>
   );
 
-  // Auth is loaded but signed in / token getter not yet wired — brief gate to prevent
-  // any child component from firing an API call before _getToken is actually callable
-  if (isSignedIn && !_getToken) return (
-    <div style={{ height:"100vh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"sans-serif" }}>
-      <img src="/agent_venturi_FINAL_app_icon.png" alt="Agent Venturi" style={{ width:80, height:80, borderRadius:18, objectFit:"cover" }} />
-      <div style={{ fontSize:14, color:"#7F77DD" }}>Loading Agent Venturi…</div>
-    </div>
-  );
+
 
 
 
