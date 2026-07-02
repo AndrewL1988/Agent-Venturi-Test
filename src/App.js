@@ -3476,10 +3476,25 @@ export default function AuthWrapper() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      // Use skipCache to always get a fresh valid token — cached token can be null on first load
+    if (!isLoaded || !isSignedIn) return;
+    // Try to get a valid token immediately, retry a few times if needed
+    const establishToken = async () => {
+      for (let i = 0; i < 5; i++) {
+        try {
+          const t = await getToken({ skipCache: true });
+          if (t) {
+            setTokenGetter(() => getToken({ skipCache: true }));
+            return;
+          }
+        } catch (e) {
+          // ignore, retry
+        }
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      }
+      // Fallback — set getter anyway, it may work later
       setTokenGetter(() => getToken({ skipCache: true }));
-    }
+    };
+    establishToken();
   }, [getToken, isLoaded, isSignedIn]);
   useEffect(() => {
     if (isSignedIn && user) {
