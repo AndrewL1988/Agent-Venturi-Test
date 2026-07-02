@@ -3477,7 +3477,8 @@ export default function AuthWrapper() {
   const { user } = useUser();
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      setTokenGetter(() => getToken());
+      // Use skipCache to always get a fresh valid token — cached token can be null on first load
+      setTokenGetter(() => getToken({ skipCache: true }));
     }
   }, [getToken, isLoaded, isSignedIn]);
   useEffect(() => {
