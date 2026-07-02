@@ -108,6 +108,11 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0) {
   try { data = JSON.parse(raw); } catch {
     throw new Error(`Unexpected API response (HTTP ${res.status}). Try again or call (800) 340-0007.`);
   }
+  // Auto-retry on auth failure — token may not have been ready on first attempt
+  if (data.signInRequired && attempt === 0) {
+    await new Promise(r => setTimeout(r, 2500));
+    return callAPI(messages, modelId, 1);
+  }
   if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
   // Pass free remaining count back via a custom property
   const freeRem = res.headers.get("X-Free-Remaining");
