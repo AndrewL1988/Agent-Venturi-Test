@@ -843,10 +843,11 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
     return res.status(429).json({ error: rateCheck.reason });
   }
 
-  // ── Tier check — app requires sign-in, guests blocked ──────────
-  if (!isSignedIn) {
-    return res.status(401).json({ error: "Sign in required to use Agent Venturi.", signInRequired: true });
-  }
+  // ── Tier check — TEMPORARILY BYPASSED pending custom domain + Clerk production setup ──
+  // TODO: restore when custom domain is configured
+  // if (!isSignedIn) {
+  //   return res.status(401).json({ error: "Sign in required to use Agent Venturi.", signInRequired: true });
+  // }
 
   // Get user role from Clerk — fetch from backend API (publicMetadata not in JWT)
   let userRole = "free";
