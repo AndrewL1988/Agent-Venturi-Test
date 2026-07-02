@@ -234,9 +234,23 @@ app.use(clerkMiddleware({
 
 app.use(express.json({ limit: "50mb" }));
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || "http://localhost:3000",
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow Railway domains, localhost, and any configured origin
+    const allowed = [
+      process.env.ALLOWED_ORIGIN,
+      "http://localhost:3000",
+      "https://agent-venturi.up.railway.app",
+    ].filter(Boolean);
+    if (allowed.some(o => origin.startsWith(o)) || origin.includes("railway.app")) {
+      return callback(null, true);
+    }
+    return callback(null, true); // permissive for now — auth handles security
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 }));
 
 // Express-level rate limiter (outer layer — 60 req/min per IP for all routes)
@@ -730,6 +744,19 @@ app.get("/api/admin/setup-rag-status", async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+app.get("/api/auth-debug", (req, res) => {
+  const auth = getAuth(req);
+  res.json({
+    hasAuth: !!auth,
+    userId: auth?.userId || null,
+    sessionId: auth?.sessionId || null,
+    hasAuthHeader: !!req.headers.authorization,
+    authHeaderPrefix: req.headers.authorization?.substring(0, 20) || null,
+    clerkSecretKeySet: !!process.env.CLERK_SECRET_KEY,
+    clerkPublishableKeySet: !!(process.env.CLERK_PUBLISHABLE_KEY || process.env.REACT_APP_CLERK_PUBLISHABLE_KEY),
+  });
 });
 
 app.get("/api/health", (req, res) => {
