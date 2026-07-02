@@ -72,7 +72,20 @@ const CHAT_MODELS = {
   sonnet: { label: "Sonnet", id: "claude-sonnet-4-6",         color: "#fbbf24", desc: "Full power · Complex troubleshooting" },
 };
 
-async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0) {
+// If the tab is backgrounded, mobile browsers often suspend/kill an in-flight
+// fetch — waitForForeground lets a retry hold off until the user is actually
+// looking at the page again instead of immediately retrying into the void.
+function waitForForeground(maxMs = 60000) {
+  return new Promise(resolve => {
+    if (typeof document === "undefined" || !document.hidden) return resolve();
+    const done = () => { document.removeEventListener("visibilitychange", onVis); clearTimeout(t); resolve(); };
+    const onVis = () => { if (!document.hidden) done(); };
+    document.addEventListener("visibilitychange", onVis);
+    const t = setTimeout(done, maxMs); // don't wait forever
+  });
+}
+
+async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0, netAttempt = 0) {
   // Wait up to 10s for token getter to be initialized AND return a valid token
   let waited = 0;
   let token = null;
@@ -84,20 +97,35 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0) {
     await new Promise(r => setTimeout(r, 300));
     waited += 300;
   }
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
-      model: modelId,
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT,
-      ...(TOOLS.length > 0 ? { tools: TOOLS } : {}),
-      messages,
-    }),
-  });
+
+  let res;
+  try {
+    res = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        ...(TOOLS.length > 0 ? { tools: TOOLS } : {}),
+        messages,
+      }),
+    });
+  } catch (networkErr) {
+    // "Failed to fetch" / connection dropped — very common on mobile when the
+    // browser backgrounds the tab mid-request or briefly loses connectivity.
+    // Retry a couple of times (waiting for foreground if backgrounded) before
+    // giving up, instead of failing the whole answer on one dropped request.
+    if (netAttempt < 2) {
+      await waitForForeground();
+      await new Promise(r => setTimeout(r, 1000));
+      return callAPI(messages, modelId, attempt, netAttempt + 1);
+    }
+    throw new Error("Connection lost while waiting for a response. This can happen if the app was backgrounded during a long answer — please try again.");
+  }
 
   // Guard against HTML error pages (proxy/CORS/gateway errors)
   const raw = await res.text();
@@ -111,7 +139,7 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0) {
   // Auto-retry on auth failure — token may not have been ready on first attempt
   if (data.signInRequired && attempt === 0) {
     await new Promise(r => setTimeout(r, 2500));
-    return callAPI(messages, modelId, 1);
+    return callAPI(messages, modelId, 1, netAttempt);
   }
   if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
   // Pass free remaining count back via a custom property
@@ -2746,12 +2774,16 @@ function AgentVenturi() {
   const SB_W = isMobile ? Math.min(winW - 40, 270) : 230;
 
   return (
-    <div style={{ height: "100vh", background: C.bg, fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.text, display: "flex", flexDirection: "row", overflow: "hidden" }}
+    <div className="av-root" style={{ background: C.bg, fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.text, display: "flex", flexDirection: "row", overflow: "hidden" }}
       onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); processImageFiles(e.dataTransfer.files); }}>
 
       {/* ── Global styles ── */}
       <style>{`
+        .av-root {
+          height: 100vh;   /* fallback for older browsers */
+          height: 100dvh;  /* tracks the real visible viewport as mobile toolbars/keyboard show & hide */
+        }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         textarea, input, select, button { font-family: inherit; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -2790,7 +2822,7 @@ function AgentVenturi() {
         ...(!isMobile && { minWidth: sidebarOpen ? SB_W : 0, width: sidebarOpen ? SB_W : 0, overflow: "hidden" }),
         background: C.sbg,
         borderRight: `1px solid ${C.purpleBorder}`,
-        display: "flex", flexDirection: "column", flexShrink: 0, height: "100vh",
+        display: "flex", flexDirection: "column", flexShrink: 0,
         boxShadow: isMobile && sidebarOpen ? "4px 0 24px rgba(0,0,0,0.6)" : "none",
       }}>
         <div style={{ width: SB_W, display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -2859,7 +2891,7 @@ function AgentVenturi() {
       </div>
 
       {/* ═══════════════ MAIN AREA ═══════════════ */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100vh", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
 
         {/* ── Header ── */}
         <div style={{ background: C.purpleDark, padding: isMobile ? "10px 8px" : "9px 14px", display: "flex", alignItems: "center", gap: isMobile ? 5 : 9, flexShrink: 0, borderBottom: `1px solid rgba(95,80,180,0.4)` }}>
@@ -3534,6 +3566,23 @@ export default function AuthWrapper() {
           </div>
           <SignIn appearance={{ variables:{ colorPrimary:"#534AB7", colorBackground:"#0f0c1e", colorText:"#CECBF6", colorTextSecondary:"#7F77DD", colorInputBackground:"#1a1640", colorInputText:"#f1f5f9", borderRadius:"10px" }, elements:{ card:{ boxShadow:"0 0 40px rgba(83,74,183,0.3)", border:"1px solid #2C2560" } } }} />
 
+          {/* Recovery link for the known Clerk dev-instance "stuck at sign-in / already signed in"
+              loop — the dev instance syncs sessions across this domain via a redirect handshake
+              that can get stuck (especially with strict cookie settings). Clearing local Clerk
+              state and reloading resolves it in most cases; the permanent fix is moving to the
+              Clerk production instance once the custom domain is live. */}
+          <button
+            onClick={() => {
+              try {
+                Object.keys(localStorage).forEach(k => { if (k.startsWith("__clerk") || k.includes("clerk")) localStorage.removeItem(k); });
+                Object.keys(sessionStorage).forEach(k => { if (k.startsWith("__clerk") || k.includes("clerk")) sessionStorage.removeItem(k); });
+              } catch {}
+              window.location.href = window.location.origin + window.location.pathname;
+            }}
+            style={{ background: "transparent", border: "none", color: "#7F77DD", fontSize: 11.5, cursor: "pointer", textDecoration: "underline", marginTop: 2 }}
+          >
+            Trouble signing in? Reset session
+          </button>
         </div>
       </SignedOut>
       <SignedIn><AgentVenturi /></SignedIn>
