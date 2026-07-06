@@ -2654,7 +2654,10 @@ function AgentVenturi() {
         syncedCountRef.current = messages.length;
         const ni = chatIndexRef.current.map(c => c.id === id ? { ...c, title, updatedAt: Date.now() } : c).sort((a, b) => b.updatedAt - a.updatedAt);
         chatIndexRef.current = ni; setChatIndex(ni);
-      } catch (e) { console.error("Chat sync failed", e); }
+      } catch (e) {
+        console.error("Chat sync failed", e);
+        setError("Couldn't save this chat — it may not survive a refresh. " + (e.message || ""));
+      }
     }, 800);
     return () => clearTimeout(saveTimerRef.current);
   }, [messages, storageReady, user?.id]);
@@ -2709,7 +2712,7 @@ function AgentVenturi() {
   // A helper for tool panels to pipe questions into the chat
   const askFromTool = (text) => { setActiveTab("chat"); setTimeout(() => sendMessage(text), 100); };
 
-  const startNewChat = () => { setMessages([]); setActiveChatId(null); activeChatIdRef.current = null; syncedCountRef.current = 0; setError(null); setStatusMsg(""); setPendingImages([]); setTimeout(() => inputRef.current?.focus(), 50); };
+  const startNewChat = () => { setActiveTab("chat"); setMessages([]); setActiveChatId(null); activeChatIdRef.current = null; syncedCountRef.current = 0; setError(null); setStatusMsg(""); setPendingImages([]); setTimeout(() => inputRef.current?.focus(), 50); };
   const openChat = async (id) => {
     if (id === activeChatIdRef.current) return;
     try {
