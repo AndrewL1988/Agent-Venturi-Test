@@ -2628,6 +2628,7 @@ function AgentVenturi() {
       } catch (e) {
         console.error("Failed to load chat history", e);
         setChatIndex([]); chatIndexRef.current = [];
+        setError("Couldn't load your chat history — " + (e.message || "connection error") + ". Pull to refresh or try again.");
       }
       setStorageReady(true);
     })();
