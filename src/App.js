@@ -81,7 +81,7 @@ function waitForForeground(maxMs = 60000) {
   });
 }
 
-async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0, netAttempt = 0) {
+async function callAPI(messages, modelId = "claude-sonnet-4-6", maxTokens = 8000, attempt = 0, netAttempt = 0) {
   // Wait up to 10s for token getter to be initialized AND return a valid token
   let waited = 0;
   let token = null;
@@ -104,7 +104,7 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0, net
       },
       body: JSON.stringify({
         model: modelId,
-        max_tokens: 8000,
+        max_tokens: maxTokens,
         system: SYSTEM_PROMPT,
         ...(TOOLS.length > 0 ? { tools: TOOLS } : {}),
         messages,
@@ -118,7 +118,7 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0, net
     if (netAttempt < 2) {
       await waitForForeground();
       await new Promise(r => setTimeout(r, 1000));
-      return callAPI(messages, modelId, attempt, netAttempt + 1);
+      return callAPI(messages, modelId, maxTokens, attempt, netAttempt + 1);
     }
     throw new Error("Connection lost while waiting for a response. This can happen if the app was backgrounded during a long answer — please try again.");
   }
@@ -135,7 +135,7 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0, net
   // Auto-retry on auth failure — token may not have been ready on first attempt
   if (data.signInRequired && attempt === 0) {
     await new Promise(r => setTimeout(r, 2500));
-    return callAPI(messages, modelId, 1, netAttempt);
+    return callAPI(messages, modelId, maxTokens, 1, netAttempt);
   }
   if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
   // Pass free remaining count back via a custom property
@@ -144,11 +144,11 @@ async function callAPI(messages, modelId = "claude-sonnet-4-6", attempt = 0, net
   return data;
 }
 
-async function runAgentLoop(apiMessages, onStatus, modelId = "claude-sonnet-4-6") {
+async function runAgentLoop(apiMessages, onStatus, modelId = "claude-sonnet-4-6", maxTokens = 8000) {
   let msgs = [...apiMessages];
   let freeRemaining = null;
   for (let round = 0; round < 8; round++) {
-    const data = await callAPI(msgs, modelId);
+    const data = await callAPI(msgs, modelId, maxTokens);
     if (data._freeRemaining !== undefined) freeRemaining = data._freeRemaining;
     const { content, stop_reason } = data;
     const txt = (content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -166,7 +166,10 @@ async function runAgentLoop(apiMessages, onStatus, modelId = "claude-sonnet-4-6"
       });
       continue;
     }
-    return { text: txt || "Done.", freeRemaining };
+    // stop_reason === "max_tokens" lands here — the answer got cut off
+    // mid-generation. Flag it so the UI can tell the user, instead of
+    // silently presenting a truncated response as complete.
+    return { text: txt || "Done.", freeRemaining, truncated: stop_reason === "max_tokens" };
   }
   return { text: "Search limit reached. Call (800) 340-0007 for further support.", freeRemaining };
 }
@@ -2601,6 +2604,7 @@ function AgentVenturi() {
   });
   const setChatModelPersist = (m) => { setChatModel(m); localStorage.setItem("phx:chat_model", m); };
   const [freeRemaining, setFreeRemaining] = useState(null); // null = signed in (no limit), number = guest questions remaining
+  const [extendedTokens, setExtendedTokens] = useState(false); // admin-only: doubles max_tokens for hard questions that risk getting cut off
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -2692,11 +2696,12 @@ function AgentVenturi() {
     setLoading(true);
     try {
       const effectiveModel = isFree ? CHAT_MODELS.haiku.id : CHAT_MODELS[chatModel].id;
-      const result = await runAgentLoop([...apiHistory, { role: "user", content: buildContent(userText, images) }], s => setStatusMsg(s), effectiveModel);
+      const effectiveMaxTokens = isAdmin && extendedTokens ? 16000 : 8000;
+      const result = await runAgentLoop([...apiHistory, { role: "user", content: buildContent(userText, images) }], s => setStatusMsg(s), effectiveModel, effectiveMaxTokens);
       setStatusMsg("");
       const assistantText = typeof result === "string" ? result : result.text;
       if (result.freeRemaining !== undefined && result.freeRemaining !== null) setFreeRemaining(result.freeRemaining);
-      setMessages([...newDisplayMessages, { role: "assistant", content: assistantText, apiContent: assistantText }]);
+      setMessages([...newDisplayMessages, { role: "assistant", content: assistantText, apiContent: assistantText, truncated: !!result.truncated }]);
     } catch (err) {
       setStatusMsg("");
       if (err.message && err.message.includes("Free limit reached")) {
@@ -3252,6 +3257,11 @@ function AgentVenturi() {
                       )}
                       {msg.role === "assistant" ? formatMessage(msg.content) : <span>{msg.content}</span>}
                     </div>
+                    {msg.role === "assistant" && msg.truncated && (
+                      <div style={{ fontSize: 10.5, color: "#fbbf24", marginTop: 4, marginLeft: 4 }}>
+                        ⚠ This answer hit the token limit and was cut off{isAdmin ? " — enable Extended answer mode and ask again." : "."}
+                      </div>
+                    )}
                     {/* Copy button — assistant messages only */}
                     {msg.role === "assistant" && msg.content && (
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5, marginLeft: 4, flexWrap: "wrap" }}>
@@ -3535,7 +3545,16 @@ function AgentVenturi() {
                     {CHAT_MODELS[chatModel].desc}
                   </span>
                 </div>
-              ) : (
+              ) : null}
+              {isAdmin && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, paddingLeft: 2 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", fontSize: 10, color: extendedTokens ? "#fbbf24" : C.textDim }}>
+                    <input type="checkbox" checked={extendedTokens} onChange={e => setExtendedTokens(e.target.checked)} style={{ cursor: "pointer" }} />
+                    Extended answer (2x token limit — for hard questions that risk getting cut off)
+                  </label>
+                </div>
+              )}
+              {!isPro && (
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6, paddingLeft: 2 }}>
                   <span style={{ fontSize: 9.5, color: "#4ade80" }}>⚡ Haiku</span>
                   <span style={{ fontSize: 9.5, color: C.textDim }}>· Free tier · 30 questions/day</span>

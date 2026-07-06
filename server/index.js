@@ -177,11 +177,11 @@ function setCache(key, result) {
 // Wraps any async function. If it doesn't resolve within
 // MAX_EXECUTION_TIME_MS, rejects with timeout error.
 // ============================================================
-function withTimeout(promise) {
+function withTimeout(promise, ms = CFG.MAX_EXECUTION_TIME_MS) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`Execution timeout after ${CFG.MAX_EXECUTION_TIME_MS}ms`));
-    }, CFG.MAX_EXECUTION_TIME_MS);
+      reject(new Error(`Execution timeout after ${ms}ms`));
+    }, ms);
     promise.then(
       val => { clearTimeout(timer); resolve(val); },
       err => { clearTimeout(timer); reject(err); }
@@ -931,6 +931,21 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
   }
 
   // ── Safeguard 4 + 7: timeout + single retry ───────────────────
+  // Token cap by tier — admins can opt into a doubled budget (via the client's
+  // "Extended answer" toggle) for hard questions that would otherwise get cut
+  // off mid-response. Everyone else is clamped to the normal default,
+  // regardless of what the client sends, so this can't be used to run up cost.
+  const DEFAULT_MAX_TOKENS = 8000;
+  const ADMIN_MAX_TOKENS   = 16000;
+  const tokenCap = userRole === "admin" ? ADMIN_MAX_TOKENS : DEFAULT_MAX_TOKENS;
+  const effectiveMaxTokens = Math.min(parseInt(max_tokens, 10) || DEFAULT_MAX_TOKENS, tokenCap);
+  // A larger token budget needs more time to generate — extend the hard
+  // timeout proportionally so an extended-mode request isn't killed by the
+  // same 45s window a normal-length answer uses.
+  const executionTimeoutMs = effectiveMaxTokens > DEFAULT_MAX_TOKENS
+    ? Math.round(CFG.MAX_EXECUTION_TIME_MS * (effectiveMaxTokens / DEFAULT_MAX_TOKENS))
+    : CFG.MAX_EXECUTION_TIME_MS;
+
   const runAI = async () => {
   // ── Model enforcement by tier ─────────────────────────────────
   const requestedModel = model || "claude-sonnet-4-6";
@@ -939,7 +954,7 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
 
     const payload = {
       model      : effectiveModel,
-      max_tokens : max_tokens || 8000,
+      max_tokens : effectiveMaxTokens,
       temperature: 0.15,
       system     : effectiveSystem,
       messages,
@@ -967,7 +982,7 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
   // Safeguard 7: ONE retry maximum — no recursive loops
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      result = await withTimeout(runAI()); // Safeguard 4: hard timeout
+      result = await withTimeout(runAI(), executionTimeoutMs); // Safeguard 4: hard timeout
       break; // success — exit retry loop
     } catch (err) {
       lastError = err;
