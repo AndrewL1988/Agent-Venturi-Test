@@ -1013,6 +1013,27 @@ app.post("/api/user/sync", safeAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Chats/messages/alarms/equipment all have a foreign key to users(id). The
+// client fires /api/user/sync on sign-in, but that's a separate request that
+// can race with (and lose to) whatever the user does first — so any route
+// that inserts a row referencing users(id) calls this first to be safe.
+async function ensureUserRow(userId) {
+  if (!userId) return;
+  try {
+    const { data } = await supabase.from("users").select("id").eq("id", userId).maybeSingle();
+    if (data) return;
+  } catch (e) { log("WARN", "ensureUserRow: lookup failed", { error: e.message }); }
+  try {
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const email = clerkUser?.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+      || clerkUser?.emailAddresses?.[0]?.emailAddress || `${userId}@unknown.local`;
+    const fullName = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") || null;
+    await supabase.from("users").upsert({ id: userId, email, full_name: fullName }, { onConflict: "id" });
+  } catch (e) {
+    log("WARN", "ensureUserRow: upsert failed", { error: e.message });
+  }
+}
+
 // ── Free tier status ──────────────────────────────────────────
 app.get("/api/free-status", (req, res) => {
   const ip    = getIP(req);
@@ -1039,8 +1060,11 @@ app.get("/api/chats", safeAuth, async (req, res) => {
 
 app.post("/api/chats", safeAuth, async (req, res) => {
   try {
+    const userId = getAuth(req)?.userId;
+    if (!userId) return res.status(401).json({ error: "Sign in required" });
+    await ensureUserRow(userId);
     const { data, error } = await supabase.from("chats")
-      .insert({ user_id: getAuth(req)?.userId, title: req.body.title || "New chat" }).select().single();
+      .insert({ user_id: userId, title: req.body.title || "New chat" }).select().single();
     if (error) throw error; res.json(data);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
