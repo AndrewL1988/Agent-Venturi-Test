@@ -8,7 +8,21 @@ export function setTokenGetter(fn) {
 }
 
 async function authFetch(url, options = {}) {
-  const token = _getToken ? await _getToken() : null;
+  // Wait up to 10s for the Clerk token getter to be ready — on a fresh page
+  // load it's set up asynchronously (see establishToken in App.js) and can
+  // race with this call. Without a token, authenticated GETs like /api/chats
+  // silently return an empty result instead of erroring, which looks like
+  // missing data rather than an auth timing issue.
+  let token = null;
+  let waited = 0;
+  while (waited < 10000) {
+    if (typeof _getToken === "function") {
+      try { token = await _getToken(); } catch {}
+      if (token) break;
+    }
+    await new Promise(r => setTimeout(r, 300));
+    waited += 300;
+  }
   const headers = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

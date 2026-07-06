@@ -1064,7 +1064,7 @@ app.get("/api/free-status", (req, res) => {
 // these are just DB reads/writes not AI executions)
 // ============================================================
 app.get("/api/chats", safeAuth, async (req, res) => {
-  if (!getAuth(req)?.userId) return res.json([]);
+  if (!getAuth(req)?.userId) return res.status(401).json({ error: "Sign in required" });
   try {
     const { data, error } = await supabase.from("chats")
       .select("id, title, created_at, updated_at").eq("user_id", getAuth(req)?.userId)
