@@ -1729,6 +1729,18 @@ function TestSuite() {
             style={{ background: selectedQs.size === 0 ? "transparent" : running ? "rgba(127,119,221,0.1)" : "rgba(83,74,183,0.3)", border:`1px solid ${selectedQs.size === 0 ? C.border : C.purple}`, borderRadius:8, padding:"5px 12px", color: selectedQs.size === 0 ? C.textDim : running ? C.textDim : "#fff", fontSize:11, fontWeight:600, cursor: selectedQs.size === 0 || running ? "not-allowed" : "pointer", opacity: selectedQs.size === 0 ? 0.5 : 1 }}>
             {running === "selected" ? "⏳ Running…" : selectedQs.size > 0 ? `▶ Run Selected (${selectedQs.size})` : "▶ Run Selected"}
           </button>
+          {running && (
+            <>
+              <button onClick={() => { pauseRef.current = !pauseRef.current; }}
+                style={{ background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.4)", borderRadius:8, padding:"5px 12px", color:"#fbbf24", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                {pauseRef.current ? "▶ Resume" : "⏸ Pause"}
+              </button>
+              <button onClick={() => { abortRef.current = true; setRunning(null); }}
+                style={{ background:"rgba(248,113,113,0.15)", border:"1px solid rgba(248,113,113,0.4)", borderRadius:8, padding:"5px 12px", color:"#f87171", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                ⏹ Stop
+              </button>
+            </>
+          )}
         </div>
       </div>
 
