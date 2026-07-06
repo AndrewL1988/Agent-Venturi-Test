@@ -3614,7 +3614,7 @@ export default function AuthWrapper() {
 
 
   if (!isLoaded) return (
-    <div style={{ height:"100vh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"sans-serif" }}>
+    <div style={{ height:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"sans-serif" }}>
       <img src="/agent_venturi_FINAL_app_icon.png" alt="Agent Venturi" style={{ width:80, height:80, borderRadius:18, objectFit:"cover" }} />
       <div style={{ fontSize:14, color:"#7F77DD" }}>Loading Agent Venturi…</div>
     </div>
@@ -3627,7 +3627,7 @@ export default function AuthWrapper() {
   return (
     <>
       <SignedOut>
-        <div style={{ height:"100vh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:20, fontFamily:"sans-serif" }}>
+        <div style={{ height:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:20, fontFamily:"sans-serif" }}>
           <div style={{ textAlign:"center", marginBottom:8 }}>
             <img src="/agent_venturi_FINAL_full_logo.png" alt="Agent Venturi: Phoenix Controls Expert" style={{ width:110, height:110, borderRadius:22, objectFit:"cover", objectPosition:"center top", border:"1.5px solid #2C2560", marginBottom:12 }} />
             <div style={{ fontSize:20, fontWeight:700, color:"#CECBF6" }}>Agent Venturi</div>
