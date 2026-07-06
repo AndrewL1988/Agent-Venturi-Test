@@ -33,10 +33,9 @@ const ACE_AVATAR_SRC = AGENT_CHAT_ICON;
 const TOOLS = [];
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
-const CHATS_INDEX_KEY = "phx:chats_index";
+// Chats are persisted server-side (Supabase, keyed by Clerk user id) via api.js.
 const ALARMS_KEY = "phx:alarms";
 const ASSETS_KEY = "phx:assets";
-const chatKey = (id) => `phx:chat:${id}`;
 
 // Storage helpers — use localStorage for persistence across refreshes
 // Falls back gracefully if localStorage is unavailable
@@ -48,9 +47,6 @@ async function stor_get(k) {
 }
 async function stor_set(k, v) {
   try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
-}
-async function stor_del(k) {
-  try { localStorage.removeItem(k); } catch {}
 }
 
 function makeId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -2613,37 +2609,55 @@ function AgentVenturi() {
   const saveTimerRef = useRef(null);
   const activeChatIdRef = useRef(null);
   const chatIndexRef = useRef([]);
+  const syncedCountRef = useRef(0); // how many of the current chat's messages are already persisted server-side
 
   useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
   useEffect(() => { chatIndexRef.current = chatIndex; }, [chatIndex]);
 
-  useEffect(() => { loadChats(); }, []);
-  async function loadChats() { const idx = await stor_get(CHATS_INDEX_KEY); setChatIndex(idx || []); chatIndexRef.current = idx || []; setStorageReady(true); }
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      try {
+        const rows = await api.getChats();
+        const idx = rows.map(r => ({ id: r.id, title: r.title, updatedAt: new Date(r.updated_at).getTime() }));
+        setChatIndex(idx); chatIndexRef.current = idx;
+      } catch (e) {
+        console.error("Failed to load chat history", e);
+        setChatIndex([]); chatIndexRef.current = [];
+      }
+      setStorageReady(true);
+    })();
+  }, [user?.id]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading, statusMsg]);
   useEffect(() => { if (renamingId && renameInputRef.current) renameInputRef.current.focus(); }, [renamingId]);
 
-  // Auto-save
+  // Auto-save — persists only messages not yet synced to the server
   useEffect(() => {
-    if (!storageReady || messages.length === 0) return;
+    if (!storageReady || messages.length === 0 || !user?.id) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
-      let id = activeChatIdRef.current;
-      const title = titleFromMessages(messages);
-      const idx = chatIndexRef.current;
-      if (!id) {
-        id = makeId(); activeChatIdRef.current = id; setActiveChatId(id);
-        const ni = [{ id, title, updatedAt: Date.now() }, ...idx];
-        chatIndexRef.current = ni; setChatIndex(ni); await stor_set(CHATS_INDEX_KEY, ni);
-      } else {
-        const ni = idx.map(c => c.id === id ? { ...c, title, updatedAt: Date.now() } : c).sort((a, b) => b.updatedAt - a.updatedAt);
-        chatIndexRef.current = ni; setChatIndex(ni); await stor_set(CHATS_INDEX_KEY, ni);
-      }
-      const slim = messages.map(m => ({ role: m.role, content: m.content, apiContent: m.apiContent || null, images: m.images || null }));
-      await stor_set(chatKey(id), { id, title, messages: slim, updatedAt: Date.now() });
+      try {
+        let id = activeChatIdRef.current;
+        const title = titleFromMessages(messages);
+        if (!id) {
+          const chat = await api.createChat(title);
+          id = chat.id; activeChatIdRef.current = id; setActiveChatId(id);
+          syncedCountRef.current = 0;
+          const ni = [{ id, title, updatedAt: Date.now() }, ...chatIndexRef.current];
+          chatIndexRef.current = ni; setChatIndex(ni);
+        }
+        const toSync = messages.slice(syncedCountRef.current);
+        for (const m of toSync) {
+          await api.saveMessage(id, m.role, m.apiContent || m.content, m.images || null);
+        }
+        syncedCountRef.current = messages.length;
+        const ni = chatIndexRef.current.map(c => c.id === id ? { ...c, title, updatedAt: Date.now() } : c).sort((a, b) => b.updatedAt - a.updatedAt);
+        chatIndexRef.current = ni; setChatIndex(ni);
+      } catch (e) { console.error("Chat sync failed", e); }
     }, 800);
     return () => clearTimeout(saveTimerRef.current);
-  }, [messages, storageReady]);
+  }, [messages, storageReady, user?.id]);
 
   // Image helpers
   const processImageFile = (file) => {
@@ -2695,11 +2709,31 @@ function AgentVenturi() {
   // A helper for tool panels to pipe questions into the chat
   const askFromTool = (text) => { setActiveTab("chat"); setTimeout(() => sendMessage(text), 100); };
 
-  const startNewChat = () => { setMessages([]); setActiveChatId(null); activeChatIdRef.current = null; setError(null); setStatusMsg(""); setPendingImages([]); setTimeout(() => inputRef.current?.focus(), 50); };
-  const openChat = async (id) => { if (id === activeChatIdRef.current) return; const d = await stor_get(chatKey(id)); if (d) { setMessages(d.messages); setActiveChatId(id); activeChatIdRef.current = id; setError(null); setStatusMsg(""); setPendingImages([]); } };
-  const removeChat = async (e, id) => { e.stopPropagation(); await stor_del(chatKey(id)); const ni = chatIndexRef.current.filter(c => c.id !== id); chatIndexRef.current = ni; setChatIndex(ni); await stor_set(CHATS_INDEX_KEY, ni); if (activeChatIdRef.current === id) startNewChat(); };
+  const startNewChat = () => { setMessages([]); setActiveChatId(null); activeChatIdRef.current = null; syncedCountRef.current = 0; setError(null); setStatusMsg(""); setPendingImages([]); setTimeout(() => inputRef.current?.focus(), 50); };
+  const openChat = async (id) => {
+    if (id === activeChatIdRef.current) return;
+    try {
+      const rows = await api.getMessages(id);
+      const msgs = rows.map(r => ({ role: r.role, content: r.content, apiContent: r.content, images: r.images || null }));
+      setMessages(msgs); syncedCountRef.current = msgs.length;
+      setActiveChatId(id); activeChatIdRef.current = id; setError(null); setStatusMsg(""); setPendingImages([]);
+    } catch (e) { console.error("Failed to load chat", e); }
+  };
+  const removeChat = async (e, id) => {
+    e.stopPropagation();
+    try { await api.deleteChat(id); } catch (err) { console.error("Failed to delete chat", err); }
+    const ni = chatIndexRef.current.filter(c => c.id !== id);
+    chatIndexRef.current = ni; setChatIndex(ni);
+    if (activeChatIdRef.current === id) startNewChat();
+  };
   const startRename = (e, id, t) => { e.stopPropagation(); setRenamingId(id); setRenameVal(t); };
-  const commitRename = async () => { if (!renameVal.trim()) { setRenamingId(null); return; } const ni = chatIndexRef.current.map(c => c.id === renamingId ? { ...c, title: renameVal.trim() } : c); chatIndexRef.current = ni; setChatIndex(ni); await stor_set(CHATS_INDEX_KEY, ni); const cd = await stor_get(chatKey(renamingId)); if (cd) await stor_set(chatKey(renamingId), { ...cd, title: renameVal.trim() }); setRenamingId(null); };
+  const commitRename = async () => {
+    if (!renameVal.trim()) { setRenamingId(null); return; }
+    const ni = chatIndexRef.current.map(c => c.id === renamingId ? { ...c, title: renameVal.trim() } : c);
+    chatIndexRef.current = ni; setChatIndex(ni);
+    try { await api.updateChat(renamingId, renameVal.trim()); } catch (e) { console.error("Failed to rename chat", e); }
+    setRenamingId(null);
+  };
 
   const handleKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
   const canSend = (input.trim() || pendingImages.length > 0) && !loading;
@@ -2885,7 +2919,7 @@ function AgentVenturi() {
                       <div style={{ fontSize: 9.5, color: C.textDim, marginTop: 2 }}>{fmtDate(chat.updatedAt)}</div>
                       <div className="cbtn" style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 3, ...(isMobile && { opacity: 1 }) }}>
                         <button onClick={e => startRename(e, chat.id, chat.title)} style={{ width: 22, height: 22, borderRadius: 5, background: "rgba(127,119,221,0.2)", border: "none", color: C.textMid, fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✏</button>
-                        <button onClick={async e => { e.stopPropagation(); const stored = await window.storage.get(chatKey(chat.id)).catch(()=>null); const full = stored ? { ...chat, messages: JSON.parse(stored.value).messages } : chat; shareChat(full); }} style={{ width: 22, height: 22, borderRadius: 5, background: "rgba(74,222,128,0.15)", border: "none", color: "#4ade80", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>↗</button>
+                        <button onClick={async e => { e.stopPropagation(); const rows = await api.getMessages(chat.id).catch(() => null); const full = rows ? { ...chat, messages: rows.map(r => ({ role: r.role, content: r.content })) } : chat; shareChat(full); }} style={{ width: 22, height: 22, borderRadius: 5, background: "rgba(74,222,128,0.15)", border: "none", color: "#4ade80", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>↗</button>
                         <button onClick={e => removeChat(e, chat.id)} style={{ width: 22, height: 22, borderRadius: 5, background: "rgba(200,80,80,0.2)", border: "none", color: C.red, fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                       </div>
                     </>
@@ -3112,9 +3146,9 @@ function AgentVenturi() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
                     <div>
                       <div style={{ fontSize: 12, color: C.text }}>Chat History</div>
-                      <div style={{ fontSize: 10, color: C.textDim }}>Stored in this browser</div>
+                      <div style={{ fontSize: 10, color: C.textDim }}>Saved to your account</div>
                     </div>
-                    <button onClick={async () => { if (window.confirm("Clear all saved chats? This cannot be undone.")) { try { const keys = await window.storage.list("phx:chat"); for (const k of keys.keys||[]) await window.storage.delete(k); await window.storage.delete("phx:chats_index"); setChatIndex([]); setMessages([]); setActiveChatId(null); alert("Chat history cleared."); } catch {} } }}
+                    <button onClick={async () => { if (window.confirm("Clear all saved chats? This cannot be undone.")) { try { await Promise.all(chatIndexRef.current.map(c => api.deleteChat(c.id).catch(() => {}))); setChatIndex([]); chatIndexRef.current = []; setMessages([]); setActiveChatId(null); activeChatIdRef.current = null; syncedCountRef.current = 0; alert("Chat history cleared."); } catch {} } }}
                       style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 7, padding: "4px 10px", color: "#f87171", fontSize: 11, cursor: "pointer" }}>
                       Clear Chats
                     </button>
@@ -3125,7 +3159,7 @@ function AgentVenturi() {
                         <div style={{ fontSize: 12, color: C.text }}>Eval Run History</div>
                         <div style={{ fontSize: 10, color: C.textDim }}>Saved evaluation results</div>
                       </div>
-                      <button onClick={async () => { if (window.confirm("Clear all saved eval runs?")) { try { await window.storage.delete("phx:eval:saved_runs"); alert("Eval history cleared."); } catch {} } }}
+                      <button onClick={async () => { if (window.confirm("Clear all saved eval runs?")) { try { localStorage.removeItem("phx:eval:saved_runs"); alert("Eval history cleared."); } catch {} } }}
                         style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 7, padding: "4px 10px", color: "#f87171", fontSize: 11, cursor: "pointer" }}>
                         Clear Evals
                       </button>
