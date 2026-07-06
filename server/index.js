@@ -10,7 +10,6 @@ const fetch   = require("node-fetch");
 const { createClient }              = require("@supabase/supabase-js");
 const ws                             = require("ws");
 const OpenAI                         = require("openai");
-const { Langfuse }                   = require("langfuse");
 // @clerk/express — current recommended Clerk SDK for Express
 const { clerkMiddleware, getAuth, requireAuth, createClerkClient } = require("@clerk/express");
 
@@ -40,6 +39,11 @@ const CFG = {
   FREE_DAILY_LIMIT         : 30,   // free tier: questions per 24hr window
   FREE_WINDOW_MS           : 24 * 60 * 60 * 1000,
   PORT                     : parseInt(process.env.PORT || "3001", 10),
+  // Comma-separated Clerk user IDs (e.g. "user_abc123,user_def456") that always
+  // get unlimited access, checked BEFORE any Clerk metadata lookup. This is a
+  // safety net so admin/testing accounts aren't silently dropped to the free
+  // tier if the Clerk publicMetadata fetch ever fails or times out.
+  ADMIN_USER_IDS           : (process.env.ADMIN_USER_IDS || "").split(",").map(s => s.trim()).filter(Boolean),
 };
 
 // ============================================================
@@ -284,21 +288,9 @@ const supabase = (process.env.SUPABASE_URL && SUPABASE_KEY)
 // OpenAI — used only for RAG embeddings (not chat)
 const openaiClient = CFG.OPENAI_API_KEY ? new OpenAI({ apiKey: CFG.OPENAI_API_KEY }) : null;
 
-// Langfuse — observability/tracing for the RAG + chat pipeline. No-ops safely if unset.
-const langfuse = (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY)
-  ? new Langfuse({
-      publicKey : process.env.LANGFUSE_PUBLIC_KEY,
-      secretKey : process.env.LANGFUSE_SECRET_KEY,
-      baseUrl   : process.env.LANGFUSE_BASEURL || "https://cloud.langfuse.com",
-    })
-  : null;
-
 // ── RAG: retrieve relevant knowledge chunks for a question ──────────────────
-async function retrieveChunks(question, parentTrace) {
+async function retrieveChunks(question) {
   if (!CFG.RAG_ENABLED || !openaiClient || !supabase) return null;
-
-  const span = parentTrace?.span({ name: "rag-retrieval", input: { question } });
-
   try {
     // 1. Embed the question
     const resp = await openaiClient.embeddings.create({
@@ -313,10 +305,7 @@ async function retrieveChunks(question, parentTrace) {
       match_count: CFG.RAG_CHUNKS,
       match_threshold: 0.28,
     });
-    if (error || !data || data.length === 0) {
-      span?.end({ output: { chunkCount: 0, error: error?.message || null } });
-      return null;
-    }
+    if (error || !data || data.length === 0) return null;
 
     // 3. Assemble context from retrieved chunks
     const context = data.map(c =>
@@ -328,17 +317,9 @@ ${c.content}`
       chunks: data.map(c => `${c.id}(${c.similarity?.toFixed(2)})`).join(", ")
     });
 
-    span?.end({
-      output: {
-        chunkCount: data.length,
-        chunks: data.map(c => ({ id: c.id, topic: c.topic, similarity: c.similarity })),
-      },
-    });
-
     return context;
   } catch (e) {
     log("WARN", "RAG retrieval failed — falling back to full prompt", { error: e.message });
-    span?.end({ level: "ERROR", statusMessage: e.message });
     return null;
   }
 }
@@ -873,13 +854,18 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
   //   return res.status(401).json({ error: "Sign in required to use Agent Venturi.", signInRequired: true });
   // }
 
-  // Get user role from Clerk — fetch from backend API (publicMetadata not in JWT)
+  // Get user role — hardcoded admin list first (no network round-trip, can't
+  // silently fail), then fall back to Clerk publicMetadata for pro/free tiers.
   let userRole = "free";
-  try {
-    const clerkUser = await clerkClient.users.getUser(userId);
-    userRole = clerkUser?.publicMetadata?.role || "free";
-  } catch (e) {
-    log("WARN", "Could not fetch Clerk user metadata — defaulting to free tier", { error: e.message });
+  if (userId && CFG.ADMIN_USER_IDS.includes(userId)) {
+    userRole = "admin";
+  } else {
+    try {
+      const clerkUser = await clerkClient.users.getUser(userId);
+      userRole = clerkUser?.publicMetadata?.role || "free";
+    } catch (e) {
+      log("WARN", "Could not fetch Clerk user metadata — defaulting to free tier", { error: e.message });
+    }
   }
 
   // Admin and pro bypass all limits entirely
@@ -923,13 +909,6 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
   // ── Increment counters BEFORE execution ───────────────────────
   incrementCounters();
 
-  // ── Langfuse: one trace per request, everything below nests under it ──
-  const lfTrace = langfuse?.trace({
-    name: "chat-request",
-    userId: userId || "anonymous",
-    metadata: { tier: userRole, ip },
-  });
-
   // ── RAG: build context-aware system prompt if enabled ─────────
   let effectiveSystem = system;
   if (CFG.RAG_ENABLED && system && supabase && openaiClient) {
@@ -939,7 +918,7 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
         ? lastUserMsg.content.filter(b => b.type === "text").map(b => b.text).join(" ")
         : (lastUserMsg?.content || "");
       if (questionText.length > 10) {
-        const ragContext = await retrieveChunks(questionText, lfTrace);
+        const ragContext = await retrieveChunks(questionText);
         if (ragContext) {
           effectiveSystem = RAG_SYSTEM_HEADER + ragContext;
           log("INFO", "RAG: using retrieved context", { chars: effectiveSystem.length });
@@ -967,39 +946,18 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
     };
     if (tools && tools.length > 0) payload.tools = tools;
 
-    const generation = lfTrace?.generation({
-      name  : "anthropic-completion",
-      model : effectiveModel,
-      input : [{ role: "system", content: effectiveSystem }, ...messages],
-      metadata: { hasRagContext: effectiveSystem !== system },
-    });
-
-    let response, data;
-    try {
-      response = await fetch("https://api.anthropic.com/v1/messages", {
-        method  : "POST",
-        headers : {
-          "Content-Type"      : "application/json",
-          "x-api-key"         : apiKey,
-          "anthropic-version" : "2023-06-01",
-        },
-        body: JSON.stringify(payload),
-      });
-      data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || `Anthropic API error ${response.status}`);
-    } catch (callErr) {
-      generation?.end({ level: "ERROR", statusMessage: callErr.message });
-      throw callErr;
-    }
-
-    generation?.end({
-      output: data.content,
-      usage : {
-        input : data.usage?.input_tokens,
-        output: data.usage?.output_tokens,
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method  : "POST",
+      headers : {
+        "Content-Type"      : "application/json",
+        "x-api-key"         : apiKey,
+        "anthropic-version" : "2023-06-01",
       },
+      body: JSON.stringify(payload),
     });
 
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || `Anthropic API error ${response.status}`);
     return data;
   };
 
