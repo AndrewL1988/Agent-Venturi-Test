@@ -82,10 +82,15 @@ function waitForForeground(maxMs = 60000) {
 }
 
 async function callAPI(messages, modelId = "claude-sonnet-4-6", maxTokens = 8000, attempt = 0, netAttempt = 0) {
-  // Wait up to 10s for token getter to be initialized AND return a valid token
+  // Wait up to 20s for token getter to be initialized AND return a valid
+  // token. establishToken's own retry loop can take ~15s worst case on a
+  // slow connection, so waiting less than that here risks sending this
+  // request with no Authorization header — which the server then treats
+  // as an anonymous/free-tier request instead of this signed-in user,
+  // even for an admin account.
   let waited = 0;
   let token = null;
-  while (waited < 10000) {
+  while (waited < 20000) {
     if (typeof _getToken === "function") {
       try { token = await _getToken(); } catch {}
       if (token) break;
@@ -1194,10 +1199,10 @@ function scoreResponse(response, keywords) {
 }
 
 async function runAITest(question, attempt = 0, modelId = "claude-haiku-4-5-20251001") {
-  // Wait up to 10s for token getter to be initialized AND return a valid token
+  // Wait up to 20s for token getter to be initialized AND return a valid token
   let waited = 0;
   let token = null;
-  while (waited < 10000) {
+  while (waited < 20000) {
     if (typeof _getToken === "function") {
       try { token = await _getToken(); } catch {}
       if (token) break;
