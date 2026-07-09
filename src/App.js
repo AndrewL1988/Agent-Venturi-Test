@@ -3622,11 +3622,34 @@ export default function AuthWrapper() {
     return () => { window.removeEventListener("online", go); window.removeEventListener("offline", gb); };
   }, []);
 
+  // Clerk normally sets isLoaded within a second or two. If it's still not
+  // loaded after 10s, the sign-in service itself is unreachable (e.g. a
+  // custom-domain cutover still mid-deployment on Clerk's side) — surface
+  // that instead of spinning silently forever.
+  const [authTimedOut, setAuthTimedOut] = React.useState(false);
+  React.useEffect(() => {
+    if (isLoaded) { setAuthTimedOut(false); return; }
+    const t = setTimeout(() => setAuthTimedOut(true), 10000);
+    return () => clearTimeout(t);
+  }, [isLoaded]);
 
   if (!isLoaded) return (
-    <div style={{ height:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"sans-serif" }}>
+    <div style={{ height:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"sans-serif", padding:24, textAlign:"center" }}>
       <img src="/agent_venturi_FINAL_app_icon.png" alt="Agent Venturi" style={{ width:80, height:80, borderRadius:18, objectFit:"cover" }} />
       <div style={{ fontSize:14, color:"#7F77DD" }}>Loading Agent Venturi…</div>
+      {authTimedOut && (
+        <>
+          <div style={{ fontSize:12.5, color:"#8b85c9", maxWidth:320, lineHeight:1.5 }}>
+            Sign-in is taking longer than usual to respond. This is usually temporary (a service update in progress) — please try again in a few minutes.
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ background:"rgba(83,74,183,0.15)", border:"1px solid #534AB7", borderRadius:8, padding:"8px 16px", color:"#CECBF6", fontSize:13, cursor:"pointer" }}
+          >
+            Retry
+          </button>
+        </>
+      )}
     </div>
   );
 
