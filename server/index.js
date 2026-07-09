@@ -192,10 +192,12 @@ function withTimeout(promise, ms = CFG.MAX_EXECUTION_TIME_MS) {
 // ============================================================
 // FREE-TIER LIMIT (existing logic, preserved)
 // ============================================================
-// User-based daily usage tracking (keyed by userId for free tier)
+// Usage tracking keyed by signed-in userId, falling back to IP for
+// anonymous visitors (sign-in is currently bypassed — see /api/chat) so
+// guests don't all collide on a single shared counter.
 const userDailyUsage = new Map();
 
-function checkUserTier(userId, userMeta) {
+function checkUserTier(usageKey, userMeta) {
   const role = userMeta?.role || "free";
   // Admin and pro bypass all limits
   if (role === "admin" || role === "pro") {
@@ -203,9 +205,9 @@ function checkUserTier(userId, userMeta) {
   }
   // Free tier: 30 questions per 24hr window
   const now = Date.now();
-  const entry = userDailyUsage.get(userId);
+  const entry = userDailyUsage.get(usageKey);
   if (!entry || now > entry.resetAt) {
-    userDailyUsage.set(userId, { count: 1, resetAt: now + CFG.FREE_WINDOW_MS });
+    userDailyUsage.set(usageKey, { count: 1, resetAt: now + CFG.FREE_WINDOW_MS });
     return { allowed: true, tier: "free", remaining: CFG.FREE_DAILY_LIMIT - 1, resetAt: now + CFG.FREE_WINDOW_MS };
   }
   if (entry.count >= CFG.FREE_DAILY_LIMIT) {
@@ -873,8 +875,10 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
     res.setHeader("X-User-Tier", userRole);
     // fall through to AI call — no limit check needed
   } else {
-    // Free tier: 30 questions per 24hr window
-    const tierCheck = checkUserTier(userId, { role: userRole });
+    // Free tier: 30 questions per 24hr window — signed-in users are keyed by
+    // userId; anonymous visitors (sign-in is currently bypassed) fall back to
+    // IP so they don't all share one global counter.
+    const tierCheck = checkUserTier(userId || `ip:${ip}`, { role: userRole });
     if (!tierCheck.allowed) {
       return res.status(429).json({
         error     : `Daily limit reached. You've used all ${CFG.FREE_DAILY_LIMIT} free questions today. Contact your administrator to upgrade, or wait ${tierCheck.hoursLeft} hour${tierCheck.hoursLeft === 1 ? "" : "s"}.`,
