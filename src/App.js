@@ -1338,8 +1338,8 @@ function TestSuite() {
   // Get questions for a category filtered by difficulty
   const getCatQuestions = (catId) => {
     const bank = activeBank[catId]?.questions || [];
-    const extra = extraQs[catId] || [];
-    const all = [...bank, ...extra.map((q, i) => ({ ...q, id: `gen_${catId}_${i}` }))];
+    const extra = extraQs[`${activeTestBank}:${catId}`] || [];
+    const all = [...bank, ...extra.map((q, i) => ({ ...q, id: `gen_${activeTestBank}_${catId}_${i}` }))];
     if (difficulty === "basic")    return all.filter(q => q.diff === "basic");
     if (difficulty === "advanced") return all.filter(q => q.diff === "advanced");
     return all; // standard = all difficulties
@@ -1600,17 +1600,19 @@ function TestSuite() {
   const generateQuestionsForCategory = async (catId) => {
     setGenerating(true); setGenError(null);
     try {
-      const cat = QUESTION_BANK[catId];
+      const cat = activeBank[catId];
       const newQs = await generateNewQuestions(cat.label, difficulty, 3, MODEL_OPTIONS[evalModel].id);
-      setExtraQs(p => ({ ...p, [catId]: [...(p[catId]||[]), ...newQs] }));
+      const key = `${activeTestBank}:${catId}`;
+      setExtraQs(p => ({ ...p, [key]: [...(p[key]||[]), ...newQs] }));
     } catch (e) { setGenError(e.message); }
     setGenerating(false);
   };
 
-  // Overall stats
-  const allDoneVals   = Object.values(results).filter(r => r.status === "done");
+  // Overall stats — scoped to the active test bank so switching banks doesn't mix scores
+  const activeBankTestIds = new Set(Object.keys(activeBank).flatMap(catId => getCatQuestions(catId).map(t => t.id)));
+  const allDoneVals   = Object.entries(results).filter(([id, r]) => activeBankTestIds.has(id) && r.status === "done").map(([, r]) => r);
   const totalEarned   = allDoneVals.reduce((s, r) => s + (r.points||0), 0);
-  const totalMax      = Object.values(results).filter(r => r.status==="done").reduce((s, r) => s + (r.maxPoints||0), 0);
+  const totalMax      = allDoneVals.reduce((s, r) => s + (r.maxPoints||0), 0);
   const overallPct    = totalMax > 0 ? Math.round(totalEarned/totalMax*100) : null;
   const overallGrade  = overallPct !== null ? toGrade(overallPct) : null;
   const toolsPassed   = Object.values(toolResults).filter(r => r.pass).length;
@@ -1679,7 +1681,7 @@ function TestSuite() {
           <div style={{ display:"flex", gap:4, alignItems:"center", background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:10, padding:"4px 6px" }}>
             <span style={{ fontSize:9.5, color:C.textDim, marginRight:2 }}>TEST:</span>
             {[["bank1","Test 1"],["bank2","Test 2"]].map(([key,label]) => (
-              <button key={key} onClick={() => { setActiveTestBank(key); setResults({}); setSelectedQs(new Set()); setSelectedCats([]); try { localStorage.removeItem("phx:eval:current_results"); } catch {} setActiveTab(Object.keys(key==="bank2"?QUESTION_BANK_2:QUESTION_BANK)[0]); }}
+              <button key={key} onClick={() => { setActiveTestBank(key); setActiveTab(Object.keys(key==="bank2"?QUESTION_BANK_2:QUESTION_BANK)[0]); }}
                 style={{ padding:"4px 14px", borderRadius:7, border:`1px solid ${activeTestBank===key?C.purple:"transparent"}`, background:activeTestBank===key?C.purpleDim:"transparent", color:activeTestBank===key?C.purpleLight:C.textDim, fontSize:11, cursor:"pointer", fontWeight:activeTestBank===key?700:400, transition:"all 0.15s" }}>
                 {label}
               </button>
@@ -1703,12 +1705,15 @@ function TestSuite() {
             {paused ? "▶ Resume" : "⏸ Pause"}
           </button>
           {/* Retry errors */}
-          {Object.values(results).some(r => r.status === "error") && !running && (
-            <button onClick={retryErrors}
-              style={{ background:"rgba(251,191,36,0.1)", border:"1px solid rgba(251,191,36,0.3)", borderRadius:8, padding:"5px 10px", color:"#fbbf24", fontSize:11, cursor:"pointer" }}>
-              🔄 Retry Errors ({Object.values(results).filter(r => r.status === "error").length})
-            </button>
-          )}
+          {(() => {
+            const bankErrorCount = Object.entries(results).filter(([id, r]) => activeBankTestIds.has(id) && r.status === "error").length;
+            return bankErrorCount > 0 && !running && (
+              <button onClick={retryErrors}
+                style={{ background:"rgba(251,191,36,0.1)", border:"1px solid rgba(251,191,36,0.3)", borderRadius:8, padding:"5px 10px", color:"#fbbf24", fontSize:11, cursor:"pointer" }}>
+                🔄 Retry Errors ({bankErrorCount})
+              </button>
+            );
+          })()}
           <button onClick={() => {
               const nonA = Object.entries(activeBank).flatMap(([catId]) =>
                 getCatQuestions(catId).filter(t => results[t.id]?.status === "done" && results[t.id]?.grade !== "A").map(t => t.id)
