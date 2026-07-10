@@ -3610,11 +3610,18 @@ export default function AuthWrapper() {
         }
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
       }
-      // Fallback — set getter anyway, it may work later
-      setTokenGetter(() => getToken({ skipCache: true }));
+      // All 5 retries failed — this means Clerk's own server is rejecting
+      // every request for this session (e.g. a stale/invalidated session
+      // still held client-side after a domain migration or a partial
+      // sign-out), not a transient network blip. Force a real sign-out
+      // instead of pretending the app is usable — otherwise the app gets
+      // stuck "signed in" against a session Clerk will never actually honor,
+      // and the user has no way back to a working sign-in screen.
+      try { await signOut(); } catch {}
+      window.location.href = window.location.origin + window.location.pathname;
     };
     establishToken();
-  }, [getToken, isLoaded, isSignedIn]);
+  }, [getToken, isLoaded, isSignedIn, signOut]);
   useEffect(() => {
     if (isSignedIn && user) {
       api.syncUser({ userId: user.id, email: user.primaryEmailAddress?.emailAddress || "", fullName: user.fullName || "" }).catch(console.error);
