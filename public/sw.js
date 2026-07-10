@@ -27,6 +27,12 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   // Never cache API calls — always go to network
   if (url.pathname.startsWith("/api/")) return;
+  // Only handle GET requests — the Cache API throws on any other method
+  // (this was hitting Clerk's own POST auth calls, e.g. session token
+  // refresh/touch, causing "Failed to execute 'put' on 'Cache'" errors).
+  // Also leave every cross-origin request (auth domains, etc.) alone —
+  // this service worker only caches this app's own same-origin assets.
+  if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
   // Cache-first for static assets, network-first for HTML
   if (e.request.destination === "document" || url.pathname === "/") {
     e.respondWith(
