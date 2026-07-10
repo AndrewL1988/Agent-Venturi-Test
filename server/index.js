@@ -1041,15 +1041,28 @@ async function ensureUserRow(userId) {
     const { data } = await supabase.from("users").select("id").eq("id", userId).maybeSingle();
     if (data) return;
   } catch (e) { log("WARN", "ensureUserRow: lookup failed", { error: e.message }); }
-  try {
-    const clerkUser = await clerkClient.users.getUser(userId);
-    const email = clerkUser?.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
-      || clerkUser?.emailAddresses?.[0]?.emailAddress || `${userId}@unknown.local`;
-    const fullName = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") || null;
-    await supabase.from("users").upsert({ id: userId, email, full_name: fullName }, { onConflict: "id" });
-  } catch (e) {
-    log("WARN", "ensureUserRow: upsert failed", { error: e.message });
+
+  // Row doesn't exist yet (or the lookup itself failed) — create it. New sign-ups
+  // race ahead of the client's /api/user/sync call, and Clerk's API / Supabase can
+  // both blip transiently, so retry once before giving up. Unlike before, a final
+  // failure is thrown instead of swallowed: callers must not insert a row that
+  // references users(id) without knowing this actually succeeded, or they'll hit
+  // an opaque FK violation instead.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(userId);
+      const email = clerkUser?.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+        || clerkUser?.emailAddresses?.[0]?.emailAddress || `${userId}@unknown.local`;
+      const fullName = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") || null;
+      const { error } = await supabase.from("users").upsert({ id: userId, email, full_name: fullName }, { onConflict: "id" });
+      if (error) throw error;
+      return;
+    } catch (e) {
+      log("WARN", "ensureUserRow: upsert failed", { attempt, error: e.message });
+      if (attempt < 2) await new Promise(r => setTimeout(r, 400));
+    }
   }
+  throw new Error("Couldn't verify your account yet — please try again in a moment");
 }
 
 // ── Free tier status ──────────────────────────────────────────
@@ -1135,7 +1148,10 @@ app.get("/api/alarms", safeAuth, async (req, res) => {
   try { const { data, error } = await supabase.from("alarm_logs").select("*").eq("user_id", getAuth(req)?.userId).order("created_at", { ascending: false }); if (error) throw error; res.json(data); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.post("/api/alarms", safeAuth, async (req, res) => {
-  try { const { data, error } = await supabase.from("alarm_logs").insert({ ...req.body, user_id: getAuth(req)?.userId }).select().single(); if (error) throw error; res.json(data); } catch (err) { res.status(500).json({ error: err.message }); }
+  try {
+    await ensureUserRow(getAuth(req)?.userId);
+    const { data, error } = await supabase.from("alarm_logs").insert({ ...req.body, user_id: getAuth(req)?.userId }).select().single(); if (error) throw error; res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.patch("/api/alarms/:id", safeAuth, async (req, res) => {
   try { const { data, error } = await supabase.from("alarm_logs").update(req.body).eq("id", req.params.id).eq("user_id", getAuth(req)?.userId).select().single(); if (error) throw error; res.json(data); } catch (err) { res.status(500).json({ error: err.message }); }
@@ -1152,7 +1168,10 @@ app.get("/api/equipment", safeAuth, async (req, res) => {
   try { const { data, error } = await supabase.from("equipment").select("*").eq("user_id", getAuth(req)?.userId).order("created_at", { ascending: false }); if (error) throw error; res.json(data); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.post("/api/equipment", safeAuth, async (req, res) => {
-  try { const { data, error } = await supabase.from("equipment").insert({ ...req.body, user_id: getAuth(req)?.userId }).select().single(); if (error) throw error; res.json(data); } catch (err) { res.status(500).json({ error: err.message }); }
+  try {
+    await ensureUserRow(getAuth(req)?.userId);
+    const { data, error } = await supabase.from("equipment").insert({ ...req.body, user_id: getAuth(req)?.userId }).select().single(); if (error) throw error; res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.patch("/api/equipment/:id", safeAuth, async (req, res) => {
   try { const { data, error } = await supabase.from("equipment").update(req.body).eq("id", req.params.id).eq("user_id", getAuth(req)?.userId).select().single(); if (error) throw error; res.json(data); } catch (err) { res.status(500).json({ error: err.message }); }
