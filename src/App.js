@@ -3675,7 +3675,7 @@ export default function AuthWrapper() {
   return (
     <>
       <SignedOut>
-        <div style={{ minHeight:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:20, fontFamily:"sans-serif", overflowY:"auto", padding:"24px 16px" }}>
+        <div style={{ height:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"flex-start", flexDirection:"column", gap:20, fontFamily:"sans-serif", overflowY:"auto", padding:"48px 16px 24px" }}>
           <div style={{ textAlign:"center", marginBottom:8 }}>
             <img src="/agent_venturi_FINAL_full_logo.png" alt="Agent Venturi: Phoenix Controls Expert" style={{ width:110, height:110, borderRadius:22, objectFit:"cover", objectPosition:"center top", border:"1.5px solid #2C2560", marginBottom:12 }} />
             <div style={{ fontSize:20, fontWeight:700, color:"#CECBF6" }}>Agent Venturi</div>
