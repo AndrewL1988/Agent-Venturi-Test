@@ -3151,7 +3151,14 @@ function AgentVenturi() {
                     </button>
                   </div>
                 ) : (
-                  <button onClick={() => signOut()}
+                  <button onClick={async () => {
+                      try {
+                        await signOut();
+                      } catch (e) {
+                        console.error("Sign out failed", e);
+                        alert("Sign out failed: " + (e?.message || "unknown error") + ". Try the 'Reset session' link on the sign-in screen instead.");
+                      }
+                    }}
                     style={{ width: "100%", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 9, padding: "10px 16px", color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                     Sign Out
                   </button>
