@@ -110,6 +110,38 @@ You should see a login screen. Sign up with your email and you're in.
 2. Add your Railway URL as an allowed origin
 3. Railway will give you a URL after first deploy — add it there
 
+### Custom domain for Clerk (production instance)
+
+If you point Clerk's production instance at a custom domain (e.g.
+`agent-venturi.buckeyeaisolutions.com` instead of a `*.clerk.accounts.dev`
+domain), Clerk's dashboard → **Domains** page gives you 5 CNAME records to add
+at your DNS provider. All 5 must show **Verified** before Clerk issues SSL
+certs for the Frontend API and Account Portal — until then, sign-in will not
+load (the app will hang on the loading screen). For this app's domain, the
+records are:
+
+| Host (Name) | Points to (Value) |
+|---|---|
+| `clerk.agent-venturi` | `frontend-api.clerk.services` |
+| `accounts.agent-venturi` | `accounts.clerk.services` |
+| `clkmail.agent-venturi` | `mail.xmnd2ai54lt4.clerk.services` |
+| `clk._domainkey.agent-venturi` | `dkim1.xmnd2ai54lt4.clerk.services` |
+| `clk2._domainkey.agent-venturi` | `dkim2.xmnd2ai54lt4.clerk.services` |
+
+Notes:
+- Record type must be **CNAME**, not A/ALIAS.
+- Enter the host exactly as shown (e.g. `clerk.agent-venturi`) — don't append
+  the root domain again if your DNS provider already adds it automatically.
+- On Cloudflare, set these to **DNS only** (grey cloud), not proxied.
+- TTL doesn't matter to Clerk — use Auto, or 300s while iterating so fixes
+  propagate quickly.
+- After adding/editing records, click **Verify configuration** on Clerk's
+  Domains page to force an immediate recheck instead of waiting on their
+  automatic poll.
+- If you ever need to redo this (domain migration, new Clerk instance), get
+  the current exact values from Clerk dashboard → Domains, since the
+  `xmnd2ai54lt4` instance ID above is specific to this Clerk instance.
+
 ### Build & start command for Railway:
 
 - **Build**: `npm install && cd server && npm install && cd .. && npm run build`

@@ -3586,6 +3586,7 @@ function AgentVenturi() {
 export default function AuthWrapper() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
+  const { signOut } = useClerk();
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     // Try to get a valid token immediately, retry a few times if needed
@@ -3660,7 +3661,7 @@ export default function AuthWrapper() {
   return (
     <>
       <SignedOut>
-        <div style={{ height:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:20, fontFamily:"sans-serif" }}>
+        <div style={{ minHeight:"100dvh", background:"#08061a", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:20, fontFamily:"sans-serif", overflowY:"auto", padding:"24px 16px" }}>
           <div style={{ textAlign:"center", marginBottom:8 }}>
             <img src="/agent_venturi_FINAL_full_logo.png" alt="Agent Venturi: Phoenix Controls Expert" style={{ width:110, height:110, borderRadius:22, objectFit:"cover", objectPosition:"center top", border:"1.5px solid #2C2560", marginBottom:12 }} />
             <div style={{ fontSize:20, fontWeight:700, color:"#CECBF6" }}>Agent Venturi</div>
@@ -3668,20 +3669,23 @@ export default function AuthWrapper() {
           </div>
           <SignIn appearance={{ variables:{ colorPrimary:"#534AB7", colorBackground:"#0f0c1e", colorText:"#CECBF6", colorTextSecondary:"#7F77DD", colorInputBackground:"#1a1640", colorInputText:"#f1f5f9", borderRadius:"10px" }, elements:{ card:{ boxShadow:"0 0 40px rgba(83,74,183,0.3)", border:"1px solid #2C2560" } } }} />
 
-          {/* Recovery link for the known Clerk dev-instance "stuck at sign-in / already signed in"
-              loop — the dev instance syncs sessions across this domain via a redirect handshake
-              that can get stuck (especially with strict cookie settings). Clearing local Clerk
-              state and reloading resolves it in most cases; the permanent fix is moving to the
-              Clerk production instance once the custom domain is live. */}
+          {/* Recovery link for the known Clerk "stuck at sign-in / already signed in" loop —
+              a redirect handshake (e.g. across the OAuth callback domain) can get stuck,
+              especially with strict cookie settings. signOut() clears the actual Clerk
+              session (including the HttpOnly session cookie, which JS can't touch directly);
+              the local/session storage cleanup below is just belt-and-suspenders for any
+              stale client-side Clerk state. Always visible without scrolling/zooming since
+              it's often needed exactly when the page above it isn't behaving. */}
           <button
-            onClick={() => {
+            onClick={async () => {
+              try { await signOut(); } catch {}
               try {
                 Object.keys(localStorage).forEach(k => { if (k.startsWith("__clerk") || k.includes("clerk")) localStorage.removeItem(k); });
                 Object.keys(sessionStorage).forEach(k => { if (k.startsWith("__clerk") || k.includes("clerk")) sessionStorage.removeItem(k); });
               } catch {}
               window.location.href = window.location.origin + window.location.pathname;
             }}
-            style={{ background: "transparent", border: "none", color: "#7F77DD", fontSize: 11.5, cursor: "pointer", textDecoration: "underline", marginTop: 2 }}
+            style={{ background: "transparent", border: "none", color: "#7F77DD", fontSize: 11.5, cursor: "pointer", textDecoration: "underline", marginTop: 2, flexShrink: 0 }}
           >
             Trouble signing in? Reset session
           </button>
