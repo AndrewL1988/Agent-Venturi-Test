@@ -2730,12 +2730,13 @@ function AgentVenturi() {
 
   const startNewChat = () => { setActiveTab("chat"); setMessages([]); setActiveChatId(null); activeChatIdRef.current = null; syncedCountRef.current = 0; setError(null); setStatusMsg(""); setPendingImages([]); setTimeout(() => inputRef.current?.focus(), 50); };
   const openChat = async (id) => {
-    if (id === activeChatIdRef.current) return;
+    if (id === activeChatIdRef.current) { setActiveTab("chat"); return; }
     try {
       const rows = await api.getMessages(id);
       const msgs = rows.map(r => ({ role: r.role, content: r.content, apiContent: r.content, images: r.images || null }));
       setMessages(msgs); syncedCountRef.current = msgs.length;
       setActiveChatId(id); activeChatIdRef.current = id; setError(null); setStatusMsg(""); setPendingImages([]);
+      setActiveTab("chat");
     } catch (e) { console.error("Failed to load chat", e); }
   };
   const removeChat = async (e, id) => {
@@ -3106,9 +3107,14 @@ function AgentVenturi() {
         {/* ── Scrollable content ── */}
         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", paddingBottom: isMobile ? "calc(130px + env(safe-area-inset-bottom, 0px))" : 0 }}>
 
-          {/* ══ ACCOUNT PANEL ══ */}
+          {/* ══ ACCOUNT MODAL ══ */}
           {showAccount && (
-            <div style={{ maxWidth: 560, width: "100%", margin: "0 auto", padding: isMobile ? "20px 14px" : "32px 20px" }}>
+            <div onClick={() => setShowAccount(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 200, display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 20 }}>
+            <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: 560, width: "100%", maxHeight: isMobile ? "88vh" : "90vh", overflowY: "auto", margin: "0 auto", padding: isMobile ? "20px 14px" : "32px 20px", background: C.bg, borderRadius: isMobile ? "16px 16px 0 0" : 16, border: `1px solid ${C.purpleBorder}`, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+              <button onClick={() => setShowAccount(false)} aria-label="Close account"
+                style={{ position: "absolute", top: 14, right: 14, width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: `1px solid ${C.border}`, color: C.textMid, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
+                ✕
+              </button>
               {/* Profile card */}
               <div style={{ background: C.card, border: `1px solid ${C.purpleBorder}`, borderRadius: 14, padding: "22px 24px", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
@@ -3197,6 +3203,7 @@ function AgentVenturi() {
                   {isAdmin && <span style={{ marginLeft: 8, color: "#fbbf24" }}>· Admin Mode</span>}
                 </div>
               </div>
+            </div>
             </div>
           )}
 
