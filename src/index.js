@@ -13,8 +13,8 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <ClerkProvider
     publishableKey={PUBLISHABLE_KEY}
-    afterSignInUrl="/"
-    afterSignUpUrl="/"
+    signInFallbackRedirectUrl="/"
+    signUpFallbackRedirectUrl="/"
   >
     <App />
   </ClerkProvider>
