@@ -850,11 +850,10 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
     return res.status(429).json({ error: rateCheck.reason });
   }
 
-  // ── Tier check — TEMPORARILY BYPASSED pending custom domain + Clerk production setup ──
-  // TODO: restore when custom domain is configured
-  // if (!isSignedIn) {
-  //   return res.status(401).json({ error: "Sign in required to use Agent Venturi.", signInRequired: true });
-  // }
+  // ── Sign-in required — custom domain + Clerk production instance confirmed working ──
+  if (!isSignedIn) {
+    return res.status(401).json({ error: "Sign in required to use Agent Venturi.", signInRequired: true });
+  }
 
   // Get user role — hardcoded admin list first (no network round-trip, can't
   // silently fail), then fall back to Clerk publicMetadata for pro/free tiers.
