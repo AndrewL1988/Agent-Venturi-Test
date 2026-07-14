@@ -1228,10 +1228,16 @@ async function runAITest(question, attempt = 0, modelId = "claude-haiku-4-5-2025
     await new Promise(r => setTimeout(r, 1500));
     return runAITest(question, 1, modelId);
   }
-  // Rate limited — wait and retry once
+  // Rate limited — wait and retry once, but only for the transient per-IP/hourly
+  // limits. A daily free-tier cap (freeLimit) won't clear in 15s, so retrying
+  // just stalls the eval run before failing anyway — fail fast instead.
   if (res.status === 429 && attempt === 0) {
-    await new Promise(r => setTimeout(r, 15000));
-    return runAITest(question, 1, modelId);
+    let body = null;
+    try { body = await res.clone().json(); } catch {}
+    if (!body?.freeLimit) {
+      await new Promise(r => setTimeout(r, 15000));
+      return runAITest(question, 1, modelId);
+    }
   }
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
