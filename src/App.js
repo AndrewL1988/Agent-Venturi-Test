@@ -3592,7 +3592,8 @@ function AgentVenturi() {
                 </div>
               )}
               <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={e => { processImageFiles(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
-              {!isMobile && <div style={{ textAlign: "center", fontSize: 10, color: C.textFaint, marginTop: 6 }}>Phoenix Controls · A Honeywell Company · 75 Discovery Way, Acton MA · (800) 340-0007</div>}
+              <div style={{ textAlign: "center", fontSize: 10, color: C.textFaint, marginTop: 6 }}>Agent Venturi is an AI assistant and can make mistakes — verify critical information against official Phoenix Controls documentation.</div>
+              {!isMobile && <div style={{ textAlign: "center", fontSize: 10, color: C.textFaint, marginTop: 4 }}>Phoenix Controls · A Honeywell Company · 75 Discovery Way, Acton MA · (800) 340-0007</div>}
             </div>
           </div>
         )}
