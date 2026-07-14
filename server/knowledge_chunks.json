@@ -5005,5 +5005,49 @@
       "complete trunk failure"
     ],
     "content": "After a power restoration, all FHD500 displays show Unlinked and all ACMs are offline. Complete systematic recovery procedure including the mandatory final verification step of MAC, baud, and pairing.\n\nThis is a complete trunk failure. The recovery procedure has two phases: physical recovery, then verification recovery. Both are required — do not stop after phase 1.\n\nPHASE 1 — PHYSICAL RECOVERY (TIMING AND WIRING):\n1. Do not rush diagnosis. Allow the full restart/boot sequence to complete: PBC requires 60-90 seconds, each ACM requires 30-60 seconds. Premature troubleshooting during boot causes false diagnosis.\n2. Verify 24VAC power is present and stable at PBC and all ACM locations.\n3. Verify MS/TP RS485 wiring integrity along the full daisy chain — a break anywhere isolates everything downstream.\n4. Verify end-of-line termination is present at both physical ends of the trunk only.\n\nPHASE 2 — VERIFICATION RECOVERY (MAC, BAUD, PAIRING) — REQUIRED, NOT OPTIONAL:\nOnce all devices have completed their restart sequence and the physical trunk is confirmed good, recovery is NOT complete. You must perform three additional verification steps:\n\n1. MAC ADDRESS VERIFICATION: Check for duplicate MAC addresses. A power cycling event can occasionally reveal a previously-undetected duplicate MAC condition (one device was masking the conflict while powered in a particular sequence). Verify every ACM's MAC address against the documented address schedule.\n\n2. BAUD RATE VERIFICATION: Confirm baud rate consistency across every device on the trunk. In rare cases a device can revert to a default or different baud rate setting during a power-loss event (corrupted configuration). If any single device shows a different baud rate than the rest of the trunk, it will appear offline even after power and wiring are confirmed good.\n\n3. PAIRING RE-ESTABLISHMENT: For any FHD500 still showing Unlinked after physical and network checks pass, re-run the FHD500 Setup Wizard to re-establish pairing with its assigned ACM. FHD500-to-ACM pairing data can be lost during certain power-loss scenarios even when the underlying MS/TP communication is otherwise healthy. This is a per-device step — repeat for every FHD500 still showing Unlinked.\n\nRECOVERY IS NOT COMPLETE until MAC, baud, and pairing have all been explicitly verified for every device — these three checks are the final mandatory phase of systematic recovery, not optional follow-up steps to skip if the trunk appears to be communicating."
+  },
+  {
+    "id": "legacy_board_800_100_036",
+    "topic": "800-100-036 — Legacy Valve Control Board (Rev E)",
+    "category": "Legacy Hardware",
+    "tags": [
+      "800-100-036",
+      "800-100-036LF",
+      "Rev E",
+      "valve control board",
+      "legacy",
+      "Accel",
+      "analog",
+      "part number",
+      "unconfirmed specs"
+    ],
+    "content": "#### 800-100-036 — Legacy Valve Control Board (Rev E)\n- **Identification**: Distributor listings (e.g. 800-100-036LF) identify this part number as a \"Valve Control Board.\" It sits in the same 800-100-0xx numbering family as 800-100-025 and 800-100-035, which public listings also describe as valve/circuit controller boards.\n- **Likely generation**: The 800-100-0xx numbering and \"valve control board\" description are consistent with Phoenix Controls' legacy analog/Accel-era valve controller hardware (see the Analog Field Service Manual and Accel II Valve product data already in this knowledge base), predating the CSCP/PBC/ACM digital platform.\n- **What is NOT confirmed**: No verified pinout, terminal block map, jumper/DIP switch settings, LED status codes, or a description of what changed between Rev E and other revisions of this board could be located in Phoenix Controls literature or this knowledge base.\n- **Field guidance**: Do not infer wiring or jumper configuration for this board from the general Accel/analog documentation without confirming against the physical board's silkscreen and terminal labeling. Before performing any replacement, calibration, or wiring work on an 800-100-036 board, confirm exact specifications with Phoenix Controls support (800) 340-0007 or an authorized distributor.\n- **Status**: Flagged as a known part number with unconfirmed board-level documentation. Update this entry once a datasheet, field service manual page, or verified photo of the board is available."
+  },
+  {
+    "id": "legacy_board_800_210_010",
+    "topic": "800-210-010 — Legacy Board (Rev C) — Specs Unconfirmed",
+    "category": "Legacy Hardware",
+    "tags": [
+      "800-210-010",
+      "Rev C",
+      "legacy",
+      "part number",
+      "unconfirmed specs",
+      "scaling module"
+    ],
+    "content": "#### 800-210-010 — Legacy Board (Rev C) — Specs Unconfirmed\n- **Identification**: No datasheet, field service manual section, or Phoenix Controls literature referencing this exact part number could be located. Adjacent part numbers in the 800-210-1xx/800-210-2xx range have appeared in distributor listings as scaling or function-module boards (e.g. \"800-210-192 — Scaling FN MOD\"), which suggests 800-210-010 may belong to a similar scaling/function-module family from the legacy analog platform — but this is a pattern-based inference from nearby part numbers, not a confirmed identification.\n- **What is NOT confirmed**: Function, terminal/pin layout, jumper or DIP switch settings, LED status meanings, host system (which valve or controller platform this board plugs into), and what changed in Rev C versus other revisions are all unconfirmed.\n- **Field guidance**: Do not attempt to wire, jumper, or replace this board based on assumptions from similarly-numbered boards. Confirm the board's function and specs directly from the board's silkscreen, the equipment it was pulled from, or Phoenix Controls support (800) 340-0007 before performing any field work.\n- **Status**: Flagged as a known part number pending real documentation (datasheet, manual excerpt, or verified photo)."
+  },
+  {
+    "id": "legacy_board_830_220_005",
+    "topic": "830-220-005 — Legacy Board (Rev C) — Specs Unconfirmed",
+    "category": "Legacy Hardware",
+    "tags": [
+      "830-220-005",
+      "Rev C",
+      "legacy",
+      "part number",
+      "unconfirmed specs"
+    ],
+    "content": "#### 830-220-005 — Legacy Board (Rev C) — Specs Unconfirmed\n- **Identification**: No datasheet, field service manual section, or Phoenix Controls literature referencing this exact part number could be located. The \"830-\" prefix appears elsewhere in Phoenix Controls part numbering alongside an \"800-\" counterpart for related board families (e.g. 830-210-011 vs. the 800-210-xxx series; 830-100-140 listed as a \"PC Board Computer\"), but no confirmed match for 830-220-005 specifically was found.\n- **What is NOT confirmed**: Function, terminal/pin layout, jumper or DIP switch settings, LED status meanings, host system, and what changed in Rev C versus other revisions are all unconfirmed.\n- **Field guidance**: Do not attempt to wire, jumper, or replace this board based on assumptions from similarly-numbered boards. Confirm the board's function and specs directly from the board's silkscreen, the equipment it was pulled from, or Phoenix Controls support (800) 340-0007 before performing any field work.\n- **Status**: Flagged as a known part number pending real documentation (datasheet, manual excerpt, or verified photo)."
   }
 ]
