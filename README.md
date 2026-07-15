@@ -2,6 +2,8 @@
 
 Phoenix Controls HVAC AI field toolkit with user authentication and cloud chat history.
 
+> Agent Venturi is an independent, third-party tool. It is not affiliated with, sponsored by, or endorsed by Phoenix Controls or Honeywell International Inc. Product and company names referenced here are trademarks of their respective owners, used only to describe compatibility.
+
 ---
 
 ## What's New in v2.0

@@ -3547,9 +3547,12 @@ function AgentVenturi() {
               </div>
 
               {/* Footer */}
-              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <div style={{ fontSize: 11, color: C.textDim }}>Phoenix Controls · A Honeywell Company · 75 Discovery Way, Acton MA 01720</div>
-                <div style={{ fontSize: 11, color: C.purpleLight, fontWeight: 500 }}>(800) 340-0007 · phoenixcontrols.com</div>
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ fontSize: 11, color: C.textDim }}>An independent field toolkit for Phoenix Controls equipment</div>
+                  <div style={{ fontSize: 11, color: C.purpleLight, fontWeight: 500 }}>Manufacturer support: (800) 340-0007</div>
+                </div>
+                <div style={{ fontSize: 10, color: C.textFaint, marginTop: 8 }}>Agent Venturi is not affiliated with, sponsored by, or endorsed by Phoenix Controls or Honeywell International Inc. Product and company names are trademarks of their respective owners, used here only to describe compatibility.</div>
               </div>
             </div>
           )}
@@ -3667,7 +3670,7 @@ function AgentVenturi() {
               )}
               <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={e => { processImageFiles(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
               <div style={{ textAlign: "center", fontSize: 10, color: C.textFaint, marginTop: 6 }}>Agent Venturi is an AI assistant and can make mistakes — verify critical information against official Phoenix Controls documentation.</div>
-              {!isMobile && <div style={{ textAlign: "center", fontSize: 10, color: C.textFaint, marginTop: 4 }}>Phoenix Controls · A Honeywell Company · 75 Discovery Way, Acton MA · (800) 340-0007</div>}
+              {!isMobile && <div style={{ textAlign: "center", fontSize: 10, color: C.textFaint, marginTop: 4 }}>Agent Venturi is an independent tool and is not affiliated with, sponsored by, or endorsed by Phoenix Controls or Honeywell. Manufacturer support: (800) 340-0007</div>}
             </div>
           </div>
         )}
