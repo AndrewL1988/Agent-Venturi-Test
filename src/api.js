@@ -69,6 +69,7 @@ export const api = {
 
   // User
   syncUser: (body) => authFetch("/api/user/sync", { method: "POST", body: JSON.stringify(body) }),
+  acceptTerms: (version) => authFetch("/api/user/accept-terms", { method: "POST", body: JSON.stringify({ version }) }),
 
   // Chats
   getChats: () => authFetch("/api/chats"),

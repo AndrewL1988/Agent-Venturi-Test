@@ -1096,9 +1096,27 @@ app.post("/api/user/sync", safeAuth, async (req, res) => {
   if (!getAuth(req)?.userId) return res.json({ ok: false, reason: "not signed in" });
   try {
     const { userId, email, fullName } = req.body;
-    await supabase.from("users")
+    const { data } = await supabase.from("users")
       .upsert({ id: userId, email, full_name: fullName }, { onConflict: "id" })
-      .select().single();
+      .select("terms_version, terms_accepted_at").single();
+    res.json({ ok: true, termsVersion: data?.terms_version || null, termsAcceptedAt: data?.terms_accepted_at || null });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Records that the signed-in user accepted a specific version of the Terms
+// of Service (src/terms.js TERMS_VERSION). The client blocks app access
+// until this matches the current version, so this is the record of consent.
+app.post("/api/user/accept-terms", safeAuth, async (req, res) => {
+  const userId = getAuth(req)?.userId;
+  if (!userId) return res.status(401).json({ error: "Sign in required" });
+  const { version } = req.body;
+  if (!version) return res.status(400).json({ error: "Missing terms version" });
+  try {
+    await ensureUserRow(userId);
+    const { error } = await supabase.from("users")
+      .update({ terms_version: version, terms_accepted_at: new Date().toISOString() })
+      .eq("id", userId);
+    if (error) throw error;
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

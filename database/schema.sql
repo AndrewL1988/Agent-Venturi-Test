@@ -8,13 +8,19 @@ create extension if not exists "uuid-ossp";
 
 -- ── Users table (mirrors Clerk users) ────────────────────────
 create table if not exists public.users (
-  id            text primary key,          -- Clerk user ID (e.g. user_2abc...)
-  email         text unique not null,
-  full_name     text,
-  created_at    timestamptz default now(),
-  updated_at    timestamptz default now(),
-  is_active     boolean default true
+  id                 text primary key,     -- Clerk user ID (e.g. user_2abc...)
+  email              text unique not null,
+  full_name          text,
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now(),
+  is_active          boolean default true,
+  terms_version      text,                 -- Terms of Service version the user accepted (see src/terms.js)
+  terms_accepted_at  timestamptz
 );
+
+-- Existing databases: add the acceptance columns if the table predates them.
+alter table public.users add column if not exists terms_version text;
+alter table public.users add column if not exists terms_accepted_at timestamptz;
 
 -- ── Chats table ───────────────────────────────────────────────
 create table if not exists public.chats (
