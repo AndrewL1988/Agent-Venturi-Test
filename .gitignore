@@ -12,6 +12,14 @@ build/
 .env.test.local
 .env.production.local
 
+# Reference diagrams (board layouts, valve drawings, etc.) — kept out of git
+# since these are typically scanned/photographed from manufacturer manuals
+# for internal team reference, not content we want baked into repo history.
+# See server/diagrams/README.md.
+server/diagrams/*
+!server/diagrams/.gitkeep
+!server/diagrams/README.md
+
 # Misc
 .DS_Store
 *.log

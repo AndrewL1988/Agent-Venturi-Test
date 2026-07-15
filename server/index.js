@@ -7,6 +7,8 @@ require("dotenv").config();
 const express = require("express");
 const cors    = require("cors");
 const fetch   = require("node-fetch");
+const fs      = require("fs");
+const path    = require("path");
 const { createClient }              = require("@supabase/supabase-js");
 const ws                             = require("ws");
 const OpenAI                         = require("openai");
@@ -306,6 +308,54 @@ const langfuse = (process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET
     })
   : null;
 
+// ── Reference diagrams: board layouts / valve drawings kept in
+// server/diagrams/ (git-ignored — see server/diagrams/README.md), wired to
+// a knowledge chunk via that chunk's "image" field in knowledge_chunks.json.
+const DIAGRAMS_DIR = path.join(__dirname, "diagrams");
+const MAX_DIAGRAM_BYTES = 5 * 1024 * 1024; // Anthropic image limit is 5MB/image
+let localKnowledgeChunksById = null;
+function getLocalChunkById(id) {
+  if (!localKnowledgeChunksById) {
+    try {
+      localKnowledgeChunksById = new Map(require("./knowledge_chunks.json").map(c => [c.id, c]));
+    } catch (e) {
+      log("WARN", "Could not load local knowledge_chunks.json for diagram lookup", { error: e.message });
+      localKnowledgeChunksById = new Map();
+    }
+  }
+  return localKnowledgeChunksById.get(id);
+}
+
+const MEDIA_TYPES = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp" };
+
+// Reads at most 2 diagram images (by chunk id) from disk and returns them as
+// Anthropic image content blocks, each followed by a short caption block.
+function loadDiagramBlocks(chunkIds) {
+  const blocks = [];
+  const seenFiles = new Set();
+  for (const id of chunkIds) {
+    if (blocks.length >= 4) break; // 2 images x (image block + caption block)
+    const chunk = getLocalChunkById(id);
+    const file = chunk?.image;
+    if (!file || seenFiles.has(file)) continue;
+    const mediaType = MEDIA_TYPES[path.extname(file).toLowerCase()];
+    if (!mediaType) continue;
+    const filePath = path.join(DIAGRAMS_DIR, file);
+    if (path.dirname(filePath) !== DIAGRAMS_DIR) continue; // no path traversal via a crafted filename
+    try {
+      const stat = fs.statSync(filePath);
+      if (stat.size > MAX_DIAGRAM_BYTES) { log("WARN", "Diagram too large — skipped", { file, bytes: stat.size }); continue; }
+      const data = fs.readFileSync(filePath).toString("base64");
+      seenFiles.add(file);
+      blocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data } });
+      blocks.push({ type: "text", text: `[Reference diagram: ${chunk.topic}]` });
+    } catch (e) {
+      log("WARN", "Diagram load failed — skipped", { file, error: e.message });
+    }
+  }
+  return blocks;
+}
+
 // ── RAG: retrieve relevant knowledge chunks for a question ──────────────────
 async function retrieveChunks(question, parentTrace) {
   if (!CFG.RAG_ENABLED || !openaiClient || !supabase) return null;
@@ -348,7 +398,7 @@ ${c.content}`
       },
     });
 
-    return context;
+    return { context, chunkIds: data.map(c => c.id) };
   } catch (e) {
     log("WARN", "RAG retrieval failed — falling back to full prompt", { error: e.message });
     span?.end({ level: "ERROR", statusMessage: e.message });
@@ -965,6 +1015,7 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
 
   // ── RAG: build context-aware system prompt if enabled ─────────
   let effectiveSystem = system;
+  let diagramBlocks = [];
   if (CFG.RAG_ENABLED && system && supabase && openaiClient) {
     try {
       const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
@@ -972,10 +1023,11 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
         ? lastUserMsg.content.filter(b => b.type === "text").map(b => b.text).join(" ")
         : (lastUserMsg?.content || "");
       if (questionText.length > 10) {
-        const ragContext = await retrieveChunks(questionText, lfTrace);
-        if (ragContext) {
-          effectiveSystem = RAG_SYSTEM_HEADER + ragContext;
-          log("INFO", "RAG: using retrieved context", { chars: effectiveSystem.length });
+        const rag = await retrieveChunks(questionText, lfTrace);
+        if (rag) {
+          effectiveSystem = RAG_SYSTEM_HEADER + rag.context;
+          diagramBlocks = loadDiagramBlocks(rag.chunkIds);
+          log("INFO", "RAG: using retrieved context", { chars: effectiveSystem.length, diagrams: diagramBlocks.length / 2 });
         }
       }
     } catch (ragErr) {
@@ -1006,20 +1058,29 @@ app.post("/api/chat", agentGuard, safeAuth, async (req, res) => {
   const isFree = userRole !== "admin" && userRole !== "pro";
   const effectiveModel = isFree ? "claude-haiku-4-5-20251001" : requestedModel;
 
+    // Attach any matched reference diagrams to the last user turn as real
+    // vision input (not just a filename mention) so the model can read them.
+    const messagesForApi = diagramBlocks.length
+      ? messages.map((m, i) => (i !== messages.length - 1 || m.role !== "user") ? m : {
+          ...m,
+          content: [...(Array.isArray(m.content) ? m.content : [{ type: "text", text: m.content }]), ...diagramBlocks],
+        })
+      : messages;
+
     const payload = {
       model      : effectiveModel,
       max_tokens : effectiveMaxTokens,
       temperature: 0.15,
       system     : effectiveSystem,
-      messages,
+      messages   : messagesForApi,
     };
     if (tools && tools.length > 0) payload.tools = tools;
 
     const generation = lfTrace?.generation({
       name  : "anthropic-completion",
       model : effectiveModel,
-      input : [{ role: "system", content: effectiveSystem }, ...messages],
-      metadata: { hasRagContext: effectiveSystem !== system },
+      input : [{ role: "system", content: effectiveSystem }, ...messagesForApi],
+      metadata: { hasRagContext: effectiveSystem !== system, diagramCount: diagramBlocks.length / 2 },
     });
 
     let response, data;
@@ -1275,7 +1336,6 @@ app.delete("/api/equipment/:id", safeAuth, async (req, res) => {
 // No agent code runs on startup. No auto-trigger on deploy.
 // ============================================================
 if (process.env.NODE_ENV === "production") {
-  const path = require("path");
   app.use(express.static(path.join(__dirname, "../build")));
   app.get("*", (req, res) => res.sendFile(path.join(__dirname, "../build", "index.html")));
 }
