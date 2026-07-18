@@ -5005,5 +5005,215 @@
       "complete trunk failure"
     ],
     "content": "After a power restoration, all FHD500 displays show Unlinked and all ACMs are offline. Complete systematic recovery procedure including the mandatory final verification step of MAC, baud, and pairing.\n\nThis is a complete trunk failure. The recovery procedure has two phases: physical recovery, then verification recovery. Both are required — do not stop after phase 1.\n\nPHASE 1 — PHYSICAL RECOVERY (TIMING AND WIRING):\n1. Do not rush diagnosis. Allow the full restart/boot sequence to complete: PBC requires 60-90 seconds, each ACM requires 30-60 seconds. Premature troubleshooting during boot causes false diagnosis.\n2. Verify 24VAC power is present and stable at PBC and all ACM locations.\n3. Verify MS/TP RS485 wiring integrity along the full daisy chain — a break anywhere isolates everything downstream.\n4. Verify end-of-line termination is present at both physical ends of the trunk only.\n\nPHASE 2 — VERIFICATION RECOVERY (MAC, BAUD, PAIRING) — REQUIRED, NOT OPTIONAL:\nOnce all devices have completed their restart sequence and the physical trunk is confirmed good, recovery is NOT complete. You must perform three additional verification steps:\n\n1. MAC ADDRESS VERIFICATION: Check for duplicate MAC addresses. A power cycling event can occasionally reveal a previously-undetected duplicate MAC condition (one device was masking the conflict while powered in a particular sequence). Verify every ACM's MAC address against the documented address schedule.\n\n2. BAUD RATE VERIFICATION: Confirm baud rate consistency across every device on the trunk. In rare cases a device can revert to a default or different baud rate setting during a power-loss event (corrupted configuration). If any single device shows a different baud rate than the rest of the trunk, it will appear offline even after power and wiring are confirmed good.\n\n3. PAIRING RE-ESTABLISHMENT: For any FHD500 still showing Unlinked after physical and network checks pass, re-run the FHD500 Setup Wizard to re-establish pairing with its assigned ACM. FHD500-to-ACM pairing data can be lost during certain power-loss scenarios even when the underlying MS/TP communication is otherwise healthy. This is a per-device step — repeat for every FHD500 still showing Unlinked.\n\nRECOVERY IS NOT COMPLETE until MAC, baud, and pairing have all been explicitly verified for every device — these three checks are the final mandatory phase of systematic recovery, not optional follow-up steps to skip if the trunk appears to be communicating."
+  },
+  {
+    "id": "fsm_diagram_wiring_labeling",
+    "topic": "Analog-Era Valve Labeling & 8-Conductor Wiring Color Code (Field Service Manual, Section 2 diagrams)",
+    "category": "Installation",
+    "tags": [
+      "wiring color code",
+      "8-conductor",
+      "terminal block",
+      "valve label",
+      "orientation",
+      "pneumatic",
+      "Belden 9421",
+      "diagram"
+    ],
+    "content": "#### Valve Labeling (Fig 2-1)\n- Every Phoenix venturi valve ships with a label listing job name, Phoenix job number, tag number, room number, and Phoenix part number.\n- Valve orientation is encoded in the part-number suffix: **-AXXHX = horizontal**, **-AXXDX = vertical down**, **-AXXUX = vertical up**. An airflow-direction arrow is printed on a yellow or blue orientation tag on the valve body.\n\n#### 8-Conductor Low-Voltage Wiring Color Code (Fig 2-2)\nStandard color-to-signal mapping used across Phoenix analog low-voltage wiring (22 AWG stranded, Belden 9421 or equivalent, max 200 ft run, plenum-rated cable available where required):\n| Pin | Color | Signal |\n|---|---|---|\n| 1 | White | +15 VDC |\n| 2 | Orange | Ground |\n| 3 | Black | -15 VDC |\n| 4 | Red | Command |\n| 5 | Green | Feedback |\n| 6 | Yellow | Alarm |\n| 7 | Blue | User Status (if applicable) |\n| 8 | Brown | Sash Signal (if applicable) |\n\nThis 8-pin plug-in, screw-down terminal block pattern (Fig 2-3) is standard across Phoenix Controls analog products regardless of which specific device is on each end — always verify against the specific board's terminal block table since not every device uses all 8 conductors.\n\n#### Pneumatic Connections\n- Standard control air is 20 psi clean, dry air with particles no larger than 20 microns (\"clean\" per Phoenix spec), delivered via 1/4\" barbed fittings.\n- Typical pneumatic connection points: valve-to-valve (multiple valve configurations), thermostat-to-MAC card, thermostat-to-supply valve, pneumatic switch-to-two-position exhaust valves."
+  },
+  {
+    "id": "fsm_diagram_analog_fhm_pinouts",
+    "topic": "Analog-Era Fume Hood Monitors — FHM420, FHM510, FHM310/410/610 Termination Points & Wiring (pre-X30 generation)",
+    "category": "Legacy Hardware",
+    "tags": [
+      "FHM420",
+      "FHM510",
+      "FHM310",
+      "FHM410",
+      "FHM610",
+      "fume hood monitor",
+      "termination points",
+      "wiring",
+      "signal flow",
+      "analog",
+      "pre-X30"
+    ],
+    "content": "These are the older analog-generation fume hood monitors (predecessors to the X30 series FHM430/530/630 — see dedicated X30 chunks for the current product line). All share the same core control concept: sash sensor + optional Zone Presence Sensor feed a face-velocity setpoint calculation (FV × Area = Flow command) into the monitor, which drives the hood exhaust valve and reports alarm/exhaust-flow status.\n\n#### FHM420 Slim Line Fume Hood Monitor\n- Two-part system: a Hood Interface Unit mounted on top of the fume hood, wired to a separate slim Display Unit mounted on the hood face.\n- Display Unit dimensions: 0.94\"W x 4.40\"H x 0.55\"D (24x112x14mm); ships with an actual-size punch template for surface-mount or flush (hollow-sidewall) installation.\n- Setback: face velocity reduces to 60-100 fpm (0.3-0.5 m/s) when the ZPS reports the operator absent.\n- Hood Interface Unit termination points: Sash Position Signal, User Status, Alarm Signal (from valve), Exhaust signal, Exhaust Command, Ground, +15VDC, -15VDC — wired via 8-conductor cable (Belden 9421 or equivalent) to the fume hood exhaust valve, Zone Presence Sensor, Display Unit, and optional Power Loss Alarm module.\n\n#### FHM510 CV/Two-Position Fume Hood Monitor\n- Used with Phoenix constant-volume (CVV) or two-position (PEV/BEV) valves. Dimensions 2.86\"W x 8.62\"H x 1.76\"D (73x219x45mm).\n- Alarms: low differential static pressure, optional sash-opening alarm. Control: two-position hood exhaust (standard/standby).\n- Termination points: Sash position signal, User status, Alarm common, N.O./N.C. alarm contact, +15Vdc, -15Vdc, Ground, Sash sensor, Pressure switch, NOV/NCV command.\n- Two standard wiring diagrams: **Constant Volume Application** (FHM510 -> Phoenix CV valve + pressure switch) and **Two-State Application** (FHM510 -> Zone Presence Sensor + two-state valve with on-board solenoid, pressure switch).\n- Replacement parts: lower board 800-200-038, upper board 800-200-039.\n\n#### FHM310/410/610 (VAV)\n- Larger VAV monitors on the same platform; FHM610 adds a digital face-velocity readout (ft/min or m/s).\n- Termination points (FHM610 shown): Sash position signal, User status, Alarm signal, Exhaust feedback, Exhaust command, Ground, +15Vdc, -15Vdc, Sash sensor.\n- Typical wiring: monitor -> fume hood exhaust valve + ZPS110, via 8-conductor Belden 9421 (sash sensor itself is a 2-conductor exception to the 8-conductor standard).\n- Replacement parts: monitor lower board (common to all FHMs) 800-200-096; FHM310 upper 800-200-036; FHM410 upper 800-200-037; FHM610 upper 800-200-031."
+  },
+  {
+    "id": "fsm_diagram_flanges_makeup_air_mas",
+    "topic": "Analog-Era Valve Flanges, Make-up Air Controllers (MAC/MIX), and MAS212 Summing Panel — Dimensions & Terminal Blocks",
+    "category": "Legacy Hardware",
+    "tags": [
+      "flanges",
+      "single body valve",
+      "MAC300V",
+      "MAC500P",
+      "MIX400",
+      "MIX500",
+      "MAS212",
+      "make-up air",
+      "summing panel",
+      "terminal block",
+      "test points"
+    ],
+    "content": "#### Flanges for Single Body Valves\nPhoenix single-body valves are available with 3 flange configurations: no flange, one single square flange (Valve Option \"F\"), or two single square flanges (Valve Option \"B\"), plus a two-welded-circular-flange style. Dimension tables (by valve size 8\"/10\"/12\") give bolt-circle diameter, outer diameter, bolt-hole count (6 or 8) and spacing (60° or 45°), and flange plate dimensions; bolt holes are 0.312\" (8mm) diameter, equally spaced on the bolt circle.\n\n#### Make-up Air Controllers (MAC300V, MAC500P, MIX400, MIX500)\n- Function: sum exhaust flows from multiple sources and control a make-up air valve using volumetric tracking (make-up air = total exhaust - offset ± temperature-override and minimum-ventilation adjustments).\n- 4 controller types: MAC300V (valve-mounted, 2-hood inputs), MAC500P (panel-mounted, 6-hood inputs, NEMA-1 enclosure), MIX400 (2-hood inputs, integrated with a DDC/FMS card), MIX500 (6-hood inputs, integrated with DDC/FMS).\n- Signal flow: hood inputs (up to 6) sum on the board -> supply total = total exhaust + offset - gas (example: 100+100+... = 800 cfm supply command).\n- Board test points (MIX400 example, TP-1 through TP-20): fume hood #1-6 flow feedback, general exhaust feedback, additional exhaust feedback, office supply feedback, temperature override, offset, total make-up demand, supply flow, general exhaust minimum clamp, -12V, +12V, Ground.\n- Terminal blocks: MAC300V uses TB1/TB10/TB11; MIX400, MAC500P, and MIX500 use TB1-TB6. Interconnect wire is 8-conductor Belden 9421 or equivalent.\n- MIX400/500 also expose a 40-pin Interface Connector (IFC-A, and IFC-B on MIX500) with a formal spec pin-out (\"P 920-210-004 REV A\") listing analog output points per hood (flow feedback, sash position, command/emergency override, alarm, user-status) for hard-wiring to a compatible FMS controller.\n- Replacement boards: MAC300V 800-210-013 (w/PTI 800-210-108); MAC500P 800-210-182 (w/PTI 800-210-185); MIX400 800-210-112 (w/PTI 800-210-117); MIX500 800-210-161 (w/PTI 800-210-122).\n\n#### MAS212 Master Summing Panel\n- Sums airflows from multiple Phoenix valves (up to 12 inputs, 6 of which can be field-scaled) into one totalized signal for a VFD or non-Phoenix device.\n- Terminal blocks TB1-TB13: TB1-TB8 are +15V/Ground/Input triplets across 8 input columns, TB9=Output, TB12=Input#13 (inverted, used to combine two MAS panels for 24 total inputs), TB13=factory-wired power input.\n- Replacement board: 800-210-181."
+  },
+  {
+    "id": "fsm_diagram_accel_valves_analog_celeris",
+    "topic": "Accel II Venturi Valve Mechanics, Analog/Celeris Controller Pinouts, and Analog-Era Valve Part-Number Decoder",
+    "category": "Legacy Hardware",
+    "tags": [
+      "Accel II",
+      "venturi valve",
+      "Celeris",
+      "analog controller",
+      "pneumatic",
+      "part number",
+      "MAV",
+      "EXV",
+      "CVV",
+      "BSV",
+      "PSV",
+      "dimensions",
+      "installation"
+    ],
+    "content": "#### How an Accel II Venturi Valve Regulates Flow Mechanically\nA spring-loaded cone/shaft assembly sits inside the venturi throat. When static pressure across the valve is low, less force is applied to the cone and its internal spring expands, opening the throat; as static pressure increases, the added force compresses the spring and drives the cone further into the venturi to hold the same set flow. This spring-and-cone mechanism is what makes the valve pressure-independent — it self-regulates against static-pressure swings without any electronics, whether or not a position controller (analog or Celeris) is attached on top.\n\n#### Two Controller Types\n- **Analog**: 0-10 Vdc pneumatic or electric position/airflow controller. Terminal blocks: Analog Pneumatic Controller uses TB1-TB7 (up to 8 terminations each); Analog Electric Controller uses TB1-TB8 plus J1, with 14 AWG wiring for electric actuation run in a star configuration.\n- **Celeris**: LonWorks-based distributed valve controller (FTT-10 channel, 78kB bus, LonTalk/BACnet). Terminal blocks: TB1=Input Connections (8), TB2=Output Connections (7), TB3=vPot & Pressure Switch (5), TB4=Power 24Vac (3), TB5=Actuator control type L (2, pneumatic), TB6=Communication/FTT-10 (2), TB7=Actuator control type M (2, electric). Jumpers select each analog input's type (Voltage / Current / Resistance-Thermistor) and each analog output's type (Voltage / Current).\n- Both controller types support daisy-chained master/slave valve tracking (\"Tracking Pair\" wiring: supply valve and exhaust valve share position data through the FTT-10 or analog bus so one tracks the other's flow with a fixed offset).\n\n#### Analog-Era Valve Part-Number Structure (MAV/EXV/CVV/PSV/BSV family)\nFormat: [Family][Construction][Orientation]-[Control][Design][Size][Flow/Pressure range]-[Options]\n- **Valve construction**: A = body+cone uncoated aluminum; B = body/cone stainless steel, PFA-coated (corrosive applications); C = body/cone/shaft baked phenolic (high-corrosivity applications); S = special coating.\n- **Orientation**: H = horizontal, U = vertical up, D = vertical downflow.\n- **Control type**: L = Celeris pneumatic actuation, E = Celeris electric, N = no electronics, M = analog.\n- **Fail-safe**: normally-open or normally-closed exhaust/supply valve on loss of signal or power.\n- **Valve options**: F = single square flange inlet, B = two square flanges, M = scaling function module (rescales/inverts the input signal), P = pressure switch (detects low static pressure across the valve), O/T = valve-mounted power supply (120V/230V).\n- CVV = constant-volume valve (pneumatic actuation only, no straight duct run required before/after). Two-position valves (BSV/BEV) can be field- or factory-upgraded to VAV (EXV/MAV) via an \"Accel II Upgrade\" (AUG) kit.\n- Medium-pressure Accel II range and low-pressure Accel II range share this same numbering scheme; low-pressure valves are simply rated for a lower static-pressure-drop range (0.3\"-3.0\" wc / 75-750 Pa) than medium-pressure valves.\n\n#### Installation Reference\n- Minimum clearance: 14 in. (36cm) free rotational space on the actuator/controls side for access; 5.75\" clearance on the opposite side for maximum flow.\n- Linkage connection (normally-closed pneumatic valves): actuator linkage -> actuator shaft -> pivot arm, secured with two clevis pins and two cotter pins.\n- Pivot arm should be installed at the 8 o'clock or 4 o'clock clock-position — avoid 12 o'clock, which shortens linkage life.\n- Ductwork mounting methods: sheet-metal screws, drawband clamp, circular flange, slip-type flange (for multiple ganged valve bodies), or a transition fitting to square duct."
+  },
+  {
+    "id": "fsm_diagram_neutralizer_power_sash",
+    "topic": "Neutralizer Sound Attenuator, Analog Power Supplies, and Analog-Era Sash Sensors (VSS/HSS/CSS/SSS)",
+    "category": "Legacy Hardware",
+    "tags": [
+      "Neutralizer",
+      "sound attenuator",
+      "power supply",
+      "WPS",
+      "sash sensor",
+      "VSS",
+      "HSS",
+      "CSS",
+      "SSS",
+      "wiring"
+    ],
+    "content": "#### Neutralizer (sound attenuator)\n- Add-on device for Accel II valves that reduces sound in the low-frequency bands (125/250/500Hz) where the valve alone can fall short of ASHRAE noise criteria. Constructed of 24-gauge galvanized steel with a sealed seam; adds less than 0.3\" wc pressure drop at ~75 fpm face velocity for most flows.\n- Any Neutralizer size can be paired with any valve size — a larger Neutralizer just yields a lower pressure drop for the same acoustic benefit.\n- Installation is direction-specific (airflow arrow must point the correct way); never penetrate the resonator chamber with sheet-metal screws — fasten only at the duct entrance/exit ends. Supports single-valve (separated or directly connected) and multiple-valve-in-series configurations.\n\n#### Analog Power Supplies (WPS series)\n- Models WPS106/206/108/208/115/130 take 105-130VAC or 207-253VAC (dual-rated units) input and output +15Vdc/-15Vdc, wired via 3-conductor cable (Red=+15V, Black=-15V, White=Ground) to the Phoenix Controls product being powered.\n- Sizing is done from a per-device current-draw table, e.g.: drive interface board 0.010A, FLO option feedback card 0.012A, single fume hood monitor 0.100A, single/dual/triple H-option solenoid 0.035A/0.070A/0.105A, single/dual/triple L-option solenoid 0.055A/0.110A/0.165A, ZPS110 0.120A, ZPS120 0.240A, ZPS130 0.360A — sum the connected devices' draw against the supply's rated output.\n- Maximum supply distance is 200 ft at 22 AWG.\n\n#### Sash Sensors (analog-era: VSS, HSS, CSS, SSS)\n- **VSS** (Vertical Sash Sensor): a precision potentiometer coupled to a stainless, nylon-jacketed retractable cable attached to the vertically-moving sash — as the sash moves, the reel/potentiometer rotates and changes a variable sash-position voltage.\n- **HSS** (Horizontal Sash Sensor): a magnet bar/sensor bar pair — the sensor bar mounts on the fume hood face and detects the position of a magnet bar mounted on the moving sash panel.\n- **CSS** (Combination Sash Sensor): combines vertical + horizontal sensing through an H/V interface card, which sums the two independent sash signals (weighted by each opening's geometric area) into one linear flow-request voltage.\n- **SSS** (Special Sash Sensor): reed/bar-sensor based, for non-traditional sash configurations.\n- Signal flow: sash sensor -> FV setpoint calculation (Area x Face Velocity = Flow command) -> Fume Hood Monitor -> exhaust flow / alarm status -> valve or drive.\n- CSS H/V interface board terminal block TB1 (8-point): VSS input x2, Ground, V+, Sum, Vout, HSS input, Vout test point; potentiometers VR1-VR4 set VSS/HSS start point and gain independently."
+  },
+  {
+    "id": "fsm_diagram_two_state_wall_switch",
+    "topic": "Two-State Wall Switch — Manual Hood Control for Teaching Labs",
+    "category": "Legacy Hardware",
+    "tags": [
+      "wall switch",
+      "two-state",
+      "teaching lab",
+      "PEV",
+      "BEV",
+      "solenoid",
+      "manual control"
+    ],
+    "content": "- A rotary two-position selector switch that lets an operator manually switch two-position hood exhaust valves (BEV/BSV/PEV/PSV, which have on-board solenoids) between minimum flow (\"operator absent\") and maximum flow (\"operator present\") — used mainly in teaching labs where automatic sash/occupancy sensing isn't installed.\n- Fail-safe: on power loss, a normally-open hood exhaust valve fails to the high-flow position.\n- Ordering code: WS-P/K-100-G/W (P = wall-plate assembly for a single-gang electrical box; K = kit only, for panel mounting in a 7/8\" hole; G/W = grey/white background icon label).\n- Wiring: a step-down transformer (120Vac -> 24Vac) feeds the switch, which drives up to 10 solenoids in parallel on a single 100VA transformer; maximum wire run depends on wire gauge and number of solenoids — e.g. 1 solenoid supports up to 1743 ft at 16 AWG (down to 433 ft at 22 AWG), while 10 solenoids on one transformer supports only 174 ft at 16 AWG (down to 43 ft at 22 AWG).\n- Two standard application diagrams: **Single Hood Operation** (one wall switch -> one two-position valve -> its own 24Vac transformer) and **Room Level Operation** (one wall switch ganging multiple two-position valves across a room on a shared 24Vac transformer).\n- Replacement parts: wall switch (two-position) 413-200-003; wall plate with hole and screws 090-500-016; icon label grey 601-100-106; icon label white 601-100-107."
+  },
+  {
+    "id": "fsm_diagram_board_model_codes",
+    "topic": "Analog Electronic Board Model-Code & Jumper System — How to Read a Model Code (Section 4 concept)",
+    "category": "Board Configuration",
+    "tags": [
+      "model code",
+      "jumper",
+      "scale factor",
+      "GN1",
+      "GS1",
+      "GS2",
+      "exhaust valve",
+      "supply valve",
+      "board configuration",
+      "analog"
+    ],
+    "content": "#### Core Concept\nPhoenix analog electronic boards are multi-purpose — a single physical board supports many different control strategies via **jumpers** (physical shorting blocks) instead of software parameters. A **model code** documents exactly which jumper configuration and application a given board instance is set to. This is the single most important concept for servicing analog-era hardware: two identical-looking boards can behave completely differently depending on jumper settings, so always check the model code (usually written on the Room Schedule Sheet or a label) before assuming a board's function from its part number alone.\n\n#### Exhaust Valve Model Codes (example family)\n- **GN1** = General Exhaust, fully-circuited, no top (SFM) board.\n- **GS1-GS4** = General Exhaust with a Scaling Function Module board: direct-acting, reverse-acting, tracking-pair, or scaled-to-potentiometer/thermostat variants.\n- **HI2/HI5** = Hood Exhaust with an Interface Board: standalone feedback vs. valve+GEX (general exhaust) tracking.\n- **GP3/GV1-3** = slave-board variants for master/slave tracking arrangements (a \"slave\" valve tracks a \"master\" valve's command rather than taking its own independent input).\n\nSimilar model-code systems exist for: Analog Supply Valves (OS1/OS2 outside air, SM1/SN1/SS1-3 supply, SP3/SV1-3 slave), Make-up Air Controllers (application codes like \"1-310\" for simple hood/make-up-air tracking, \"2-310 HEO\" for Hood Exhaust Override, \"3-320\" for general-exhaust integration), Integrated MAC boards (MIX400/500, thermal-override-tracking application codes), and Master Summing Panels (MAS100/MAS212 hardware configs S-MAS112/D-MAS124).\n\n#### Scale Factors\nBoards are standardized on cfm/volt scale factors of 200, 500, or 1250 (sometimes shown as a combined code like \"22-200\" meaning a 22-200 cfm input range scaled against a 200 cfm/volt factor). The scale factor determines how a 0-10V command/feedback signal maps to actual airflow, and must match the valve's own factory-calibrated scale factor for the loop to read correctly.\n\n#### Per-Board-Type Product Configuration Chart\nEach valve/board type's documentation cross-references: jumpers, settings (offset/span/min-max clamp — some factory-set, some field-schedulable), terminal blocks (wiring per single/dual/triple/quad valve-body count), and add-on boards (an HP card for a Hood Interface, or a Scaling Function Module for potentiometer/thermostat tracking). When troubleshooting an unfamiliar analog board, matching its jumper positions against the correct model code's chart is the fastest way to confirm it's configured as intended."
+  },
+  {
+    "id": "fsm_diagram_board_test_points",
+    "topic": "Analog Valve Controller Board Test Points, VR Pot Pattern, and Drive/DDC Interface Wiring",
+    "category": "Board Configuration",
+    "tags": [
+      "test points",
+      "TP1",
+      "TP2",
+      "VR pot",
+      "offset",
+      "span",
+      "PCD300",
+      "DIB100",
+      "variable speed drive",
+      "scaling function module"
+    ],
+    "content": "#### Standard Valve Controller Test Point Pattern\nAcross nearly all Phoenix analog valve controller boards (fume hood exhaust, supply, bypass/outside-air/general-exhaust, and slave valves — pneumatic or electric actuation), the same test-point layout repeats: **TP1**=Ground, **TP2**=Clamped command, **TP3**=Total/summed feedback (master valve plus all its slaves), **TP4**=vPot (valve position potentiometer), **TP5**=Slave feedback (sum of only the slaves prior to this one in the daisy chain). This master→slave→slave feedback-summing pattern is how Phoenix confirms every valve body in a ganged assembly is actually tracking, not just the master.\n\n#### Standard VR Potentiometer Pattern\nMost valve controllers expose 4 adjustment pots: **VR1**=Offset (factory set), **VR2**=Span (factory set), **VR3**=Min clamp, **VR4**=Max clamp. Some models add VR5=Current trip, and electric-actuator models add VR6/VR7=min/max position clamp.\n\n#### Variable Speed Drive Interface (PCD300 + DIB100)\n- **PCD300** drive: 3-phase input (230V or 460V models, freq ±5% of 60Hz) landed at TB3 (L1/L2/L3 in, T1/T2/T3 to motor, G=ground); control wiring at TB1 (forward run command, control input common, shield, command, fault threshold, analog common, feedback, feedback common) and TB2 (two flow-alarm contacts, drive-fault alarm, alarm common). Maximum motor cable length is 150 ft.\n- **DIB100** (Drive Interface Board) bridges MAC/MIX tracking valves to a PCD300 drive: TB1=monitor points, TB2=drive points (command/feedback/alarm/fault-threshold/sash-position/cable drain), TB3=interface to the MAC/MIX tracking valves.\n\n#### Generic Add-On / Interface Boards\n- **Scaling Function Module**: a small add-on board (TC1 5-pin connector: +12V, Ground, -12V, unscaled input signal, output signal) used across many board types (MAC, MIX, MAS, exhaust valves) to rescale or invert a signal; VR1=start point, VR2=offset, VR3=gain.\n- **FLO Option board**: a summing add-on for chaining multiple flow-feedback cards — offset/span are factory-set; input and feedback test points report the sum of all FLO cards previous to (and including) the one being measured.\n- **H/V Interface Board** (drives Combination Sash Sensors): TB1 8-point (VSS input x2, Ground, V+, Sum, Vout, HSS input x2); VR1-4 set VSS/HSS start point and gain.\n- **ZPS110 board** (older Zone Presence Sensor, predecessor to current ZPS300 — see the dedicated ZPS chunk for the current product): TB1 7-point (Hood status, +15V, Ground, -15V, Slave input, User status, Sync in/out); jumper JP3/JP4 select standalone/master vs. slave role when daisy-chaining multiple ZPS units across a wide hood."
+  },
+  {
+    "id": "fsm_diagram_calibration_formulas",
+    "topic": "Analog Field Calibration Formulas — Sash Height, Face Velocity Voltage, Combination Sash, and Isolation Room Containment Modes",
+    "category": "Commissioning",
+    "tags": [
+      "calibration",
+      "sash height formula",
+      "face velocity",
+      "combination sash",
+      "isolation room",
+      "containment mode",
+      "IRM",
+      "VR1",
+      "VR2"
+    ],
+    "content": "#### Fume Hood Monitor Basic Calibration (Procedure FC-1A)\n- Sash-height formulas (leakage assumed at 3 cfm/ft² of maximum sash opening):\n  - min sash height (in) = [144 × (min cfm − leakage)] / [sash width (in) × setpoint face velocity]\n  - max sash height (in) = [144 × (max cfm − leakage)] / [sash width (in) × setpoint face velocity]\n- Voltage formulas (scale = the valve's cfm/volt scale factor): min volt = min cfm × scale; max volt = max cfm × scale. Adjust VR2 (min command) clockwise until the minimum voltage/airflow target is reached, then VR3 (max command) similarly for the maximum.\n- All calibration pots on these boards are 22-turn pots that click audibly when fully turned in either direction — do not force past the click.\n- FHM610's digital face-velocity display reads 1/10th of actual flow (e.g. a display of \"075\" corresponds to an actual reading of 750), calibrated via VR7 (max flow) and VR8 (FV adjustment).\n\n#### Combination Sash Sensor Calibration (CSS with H/V interface board)\nSums independent vertical and horizontal sash-position voltages into one linear flow-request signal using the geometric area each sash covers:\n- V3 = V2 − V1 (voltage delta between fully-open and fully-closed vertical sash)\n- A3 = A2 − A1 (open-area delta, measured in sq ft, between those same two sash states)\n- V4 = V3 × A3\n- V5 = V1 + V4\nThis effectively triangulates the combined open area of two independently-moving sashes (one vertical, one horizontal) into a single voltage proportional to total open area, which then drives the standard FV × Area = Flow command calculation.\n\n#### Isolation Room Monitor (IRM) Containment-Mode Logic\nThe fundamental control sequence for a pressure-controlled isolation room is a 3×3 command matrix: three containment modes — **Positive/Protective**, **Neutral/Standby**, **Negative/Infectious** — each commands a different combination of Patient Room Supply (CMD1, normally-open valve), Patient/Anteroom Supply (CMD2, normally-closed), and Anteroom Exhaust (CMD3, normally-closed) to either min-flow or max-flow via a +12VDC/0VDC signal level. For example, in Air Out (Positive/Protective) mode, CMD1 signals min flow while CMD2 and CMD3 both signal max flow; the exact matrix should always be cross-checked against the specific room's Room Schedule Sheet. Calibration verifies each mode's voltage at the valve feedback test points (TP7/TP8) against the Room Schedule Sheet's target cfm, adjusting offset pots (R6, R14/R15) so each mode tracks the patient-room/anteroom supply-exhaust balance within ±5% of scheduled values."
+  },
+  {
+    "id": "fsm_diagram_troubleshooting_quick_chart",
+    "topic": "Analog System Troubleshooting Quick Chart & Fume Hood Monitor Voltage Diagnostics",
+    "category": "Troubleshooting",
+    "tags": [
+      "troubleshooting",
+      "quick chart",
+      "TB1-6",
+      "flow alarm",
+      "voltage diagnostic",
+      "isolation room",
+      "field service"
+    ],
+    "content": "#### Troubleshooting Quick Chart (standard order of checks)\nWhen troubleshooting any Phoenix analog device, work through these in order rather than jumping straight to calibration: 1) installation/component location and obvious physical damage; 2) connections (pneumatic and electric, valve linkages); 3) power (±15VDC and 20 psi main air present); 4) field calibration (sash sensor boards, fume hood monitor, variable speed drive); 5) differential static pressure requirements met; 6) DDC/FMS connections (a misbehaving DDC point can pull down or otherwise affect a signal that looks like a device fault); 7) basic signal flow (command vs. feedback, override input, ±12V and ±10V regulator voltages on the controller card); 8) factory settings (jumpers, clamps, scaling function modules, potentiometer settings, valve's own internal calibration).\n\n#### Fume Hood Monitor Voltage Diagnostic Table (measured at TB1-6 on FHM310/410/610)\n| Voltage | Meaning | Likely cause |\n|---|---|---|\n| >10V | Flow alarm | Low static pressure across the valve — check for fan/duct blockage, too many sashes open at once, or a valve that has failed open |\n| 5V | Incorrect valve position | Valve failed open, sash open beyond the maximum allowable position, or a broken sash sensor cable |\n| 0V | Monitor reads normal but actual face velocity measures high or low | Low static-pressure differential, or the monitor itself is miscalibrated |\n| No display / can't mute | Loss of power or a defective monitor | Check ±15VDC supply and wiring before replacing the board |\n\n#### Isolation Room Monitor Troubleshooting\n- Door alarm engaged: door ajar, or a broken/miswired door switch.\n- Isolation alarm engaged: loss of signal at LED D2; incorrect offset (check LED D5/D8); insufficient air changes (check LED3); auxiliary measuring device error (check LED1).\n\n#### General Operational Problems\n- Room too hot/cold: check reheat coil operation, thermostat setpoint/calibration, air handler status, and valve position.\n- Odors escaping the lab / pressurization problems: perform a Lab Room Airflow Verification and confirm the volumetric offset is actually being held.\n- Hood not returning to standby: Zone Presence Sensor setback is likely miscalibrated — re-verify the setback procedure rather than assuming a hardware failure."
+  },
+  {
+    "id": "fsm_diagram_lab_sequence_of_operations",
+    "topic": "Generic Laboratory Airflow Control Sequence of Operations — Pressurization, Reheat, and Fume Hood Sash Tracking",
+    "category": "Controls",
+    "tags": [
+      "sequence of operations",
+      "pressurization",
+      "reheat",
+      "VAV",
+      "fume hood",
+      "point schedule",
+      "control diagram",
+      "BAS",
+      "BACnet"
+    ],
+    "content": "This is the standard sequence of operations pattern used on Phoenix Controls laboratory airflow projects (generalized from project control drawings — specific setpoints are always project-adjustable and should be confirmed against the room schedule).\n\n#### System Architecture\nAirflow control devices (hood air valves, general exhaust valves, supply air valves) use peer-to-peer distributed control to perform room-level control — the logic runs on the devices themselves, not on a central computer. Every valve is factory-calibrated with a pre-programmed airflow characterization curve, so the valve measures its own flow from position; no field flow sensor is needed. Fume hood controls are provided by the fume hood valve/monitor. The system reports flow rate at every air valve to the Building Automation System over an open protocol (typically BACnet).\n\n#### Pressurization (Volumetric Offset) Control\nSupply and auxiliary exhaust devices are controlled to maintain an adjustable volumetric offset (for a negative/hazardous room, exhaust > supply) regardless of any change in flow or static pressure. The pressurization algorithm sums the flows of all supply and exhaust devices in the room and commands them to new setpoints to hold that offset, and can regulate airflow across multiple supply devices simultaneously as a load-shared group.\n\n#### Temperature Control (Occupied Mode) — VAV-with-Reheat Sequencing\nAs space temperature falls below the adjustable cooling setpoint (typically 72°F), the airflow control device modulates closed until it reaches its scheduled minimum flow setpoint. If that device has a reheat coil and space temperature keeps falling below the heating setpoint (typically 70°F) even after the device has bottomed out at minimum flow, the hot-water reheat valve modulates open to hold space temperature. In other words: the valve throttles down first, and reheat only engages once the valve is already at its minimum — this prevents simultaneous heating and cooling.\n\n#### Fume Hood Sash-Tracking Control\nThe fume hood monitor signals operating mode (standard/standby), a caution flow alarm, mute, and emergency (increased exhaust flow), and monitors sash position, hood exhaust feedback, and alarm signal. Face velocity is field-adjustable within a typical range of 85-120 fpm (setpoint commonly 100 fpm). As the sash is raised, the hood controller signals the hood air valve to modulate open, increasing exhaust to hold face velocity constant; as the sash is lowered, it modulates closed. This constant-face-velocity-via-sash-tracking loop is the core fume hood control concept underlying every Phoenix fume hood product.\n\n#### Typical Alarms\n- Air valve differential-pressure sensor indicates low static pressure.\n- Fume hood face velocity falls below its adjustable setpoint (often with an optional time delay before alarming, to avoid nuisance trips during normal sash movement).\n\n#### Typical Point Schedules (I/O per device type)\n- **Supply Air Valve**: plunger position (AO), heating-water valve position (AO), space temperature sensor (AI), space temperature adjust band (AI), space occupancy override (AI).\n- **Exhaust Air Valve**: plunger position (AO).\n- **Hood Air Valve / Fume Hood**: plunger position, sash position, sash velocity, occupancy override.\n- **Bio-Safety Cabinet air valve**: plunger position, sash position.\n\n#### General Controls Engineering Practices Worth Following\nAll setpoints should be field-adjustable at the local controller, at the BAS, and (where applicable) via a handheld/laptop tool — without needing a software revision. Every device should fail to a defined safe position on loss of control signal or power (normally-open or normally-closed, per device, matching the room's safety requirement). Build in adequate deadband/anti-hunt logic between heating and cooling and between sequenced stages. On loss of communication to a device, the BAS should alarm and identify the specific fault, and retain the device's last-known value in memory rather than defaulting to zero."
+  },
+  {
+    "id": "fsm_diagram_field_wiring_pneumatic_reference",
+    "topic": "Field Wiring & Pneumatic Sizing Reference — Cable Specs, Tubing Sizing, and Concrete Wiring Examples",
+    "category": "Installation",
+    "tags": [
+      "pneumatic sizing",
+      "SCIM",
+      "cable spec",
+      "Belden",
+      "Comtran",
+      "plenum rated",
+      "daisy chain",
+      "DDC interface",
+      "wiring detail"
+    ],
+    "content": "#### Pneumatic Tubing Sizing\n- Air-consumption allowance for compressor sizing: single and dual valves need 10 SCIM per valve; triple and quad valves need 20 SCIM. (Accel II valves are not continuous air-consuming devices — this is a peak/estimating allowance, not continuous draw.)\n- Main air line tubing size depends on the number of fume hoods/tracking systems served per lab loop: roughly 1 system=1/4\", 2-4 systems=3/8\", 5-6 systems=1/2\" (shorter total-tubing runs can generally use one size smaller than a long run carrying the same load). Standard assumptions: valves are regulated at 20 psi ±2 psi, filtered through a 20-micron main air filter; hood and general-exhaust valves are normally closed, make-up air valves are normally open.\n\n#### Approved Wiring Cable Specifications by Function\n| Function | Cable type | Wire gauge | Plenum rated | Primary vendor/part | Alternate |\n|---|---|---|---|---|---|\n| Control + DC power | 3-conductor round | 22 AWG | No | Belden 8443 | Manhattan M1330 (3-cond) |\n| Control only | 8-conductor round | 22 AWG | No | Belden 9421 | Manhattan M1330B |\n| Control only | 8-conductor round | 22 AWG | Yes | Comtran 4956 | No substitutes |\n\nWire must be stranded, never solid.\n\n#### Concrete Wiring Examples (generalizable patterns, not project-specific)\n- **Fume hood monitor to valve**: a monitor's 8-point terminal block (+12/15VDC, Analog Ground, External Emergency, Command, Feedback, Alarm, User Status, Sash Position) wires 1:1 via 8-conductor cable to the hood valve's upper card, whose 8 pins carry the same signal roles in the same order (only the DC polarity label differs by device generation). The monitor's separate power terminal block (24VAC Hi/+15VDC, Functional Ground, 24VAC Neutral/-15VDC) is wired independently of the signal terminal block. A combination sash sensor feeding the monitor's Sash Sensor input typically goes through an H/V interface box that itself combines a 2-conductor vertical sash sensor and a 2-conductor horizontal sash sensor onto the shared 8-conductor run.\n- **Master/slave valve daisy chain**: in a ganged multi-body valve assembly, a master valve's terminal block feeds the first slave valve's terminal block, which feeds the next slave in the chain — each slave repeats the same 8-pin pattern (most pins wired straight through, one pin typically unused) so the whole chain shares one command signal while each valve reports its own feedback back up the chain.\n- **Third-party DDC/FMS interface to a Phoenix MAC board**: a third-party DDC panel typically integrates over a handful of discrete points rather than a full data bus — e.g. one wire carries a total-exhaust-feedback analog signal, another carries a supply-air-feedback analog signal, others carry digital alarm/thermostat contacts. Always confirm the exact point-to-point mapping against the project's own wiring diagram; the pattern (a few analog feedbacks + a few digital alarm contacts) is what generalizes, not the specific terminal numbers."
   }
 ]

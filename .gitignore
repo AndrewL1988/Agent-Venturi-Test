@@ -25,3 +25,6 @@ yarn-error.log*
 
 # OS
 Thumbs.db
+
+# Large source-material archives — not part of the app
+PhoenixKnowledge.zip
